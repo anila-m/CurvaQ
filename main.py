@@ -19,3 +19,4 @@ inputs = generate_random_datapoints(3, num_qubits, random_unitary)
 print(inputs)
 
 loss_landscape = generate_2d_loss_landscape(50, inputs, U, qnn)
+print(loss_landscape)

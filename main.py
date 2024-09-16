@@ -1,47 +1,52 @@
-import torch
-import numpy as np
-from qnns.cuda_qnn import CudaPennylane
-from qnns.qnn import get_qnn
-from victor_thesis_landscapes import generate_random_datapoints
-from victor_thesis_landscapes import generate_2d_loss_landscape
-from data import random_unitary_matrix
+from victor_thesis_landscapes import *
 from victor_thesis_metrics import *
 
-"""
-num_qubits = 2
-qnn = CudaPennylane(num_wires=num_qubits, num_layers=3, device="cpu")
-print(qnn.params)
 
-#U = torch.tensor(np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
-U = torch.tensor(np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]]), dtype=torch.complex128, device="cpu")
-print(U)
+def calculate_metrics(landscape):
+    scalar_curvature = calc_scalar_curvature(landscape)
+    print("Scalar Curvature: " + str(scalar_curvature))
 
-random_unitary = torch.tensor(np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-print(random_unitary)
+    total_variation = calc_total_variation(landscape)
+    print("Total Variation: " + str(total_variation))
 
-inputs = generate_random_datapoints(3, num_qubits, random_unitary)
-print(inputs)
+    fourier_density = calc_fourier_density(landscape)
+    print("Fourier Density: " + str(fourier_density))
 
-loss_landscape = generate_2d_loss_landscape(4, inputs, U, qnn)
-print(loss_landscape)
+    IGSD = calc_IGSD(landscape)
+    print("Inverse Standard Gradient Deviation: " + str(IGSD))
 
-"""
 
-qnn = get_qnn("CudaU2", [0], 1, device="cpu")
-#qnn = CudaPennylane(num_wires=0, num_layers=1, device="cpu")
+# test landscape generation and metric calculation for QNNs with one qubit
+def test_one_qubit():
+    qnn = get_qnn("CudaU2", [0], 1, device="cpu")
+    unitary = torch.tensor(np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
+    inputs = generate_random_datapoints(3, 1, unitary)
+    landscape = generate_2d_loss_landscape(10, inputs, unitary, qnn)
+    calculate_metrics(landscape)
 
-unitary = torch.tensor(np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
-inputs = generate_random_datapoints(3, 1, unitary)
-landscape = generate_2d_loss_landscape(4, inputs, unitary, qnn)
 
-scalar_curvature = calc_scalar_curvature(landscape)
-print(scalar_curvature)
+# test landscape generation and metric calculation for QNNs with two qubits
+# NOT YET WORKING
+def test_two_qubits():
+    num_qubits = 2
+    qnn = get_qnn("CudaU2", list(range(num_qubits)), 3, device="cpu")
+    print(qnn.params)
 
-total_variation = calc_total_variation(landscape)
-print(total_variation)
+    matrix = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+    unitary = torch.tensor(matrix, dtype=torch.complex128, device="cpu")
+    print(unitary)
 
-fourier_density = calc_fourier_density(landscape)
-print(fourier_density)
+    random_unitary = torch.tensor(np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
+    print(random_unitary)
 
-IGSD = calc_IGSD(landscape)
-print(IGSD)
+    inputs = generate_random_datapoints(3, num_qubits, random_unitary)
+    print(inputs)
+
+    landscape = generate_2d_loss_landscape(10, inputs, unitary, qnn)
+    print(landscape)
+
+    calculate_metrics(landscape)
+
+
+test_one_qubit()
+test_two_qubits()

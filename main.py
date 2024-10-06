@@ -59,10 +59,13 @@ def test(qnn_type, num_qubits, num_layers, unitary):
     calculate_metrics(landscape)
 
 
-#test_one_qubit()
-test_two_qubits()
 
 
 matrix = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
 unitary = torch.tensor(matrix, dtype=torch.complex128, device="cpu")
 # test("Pennylane", 2, 3, unitary)
+
+
+if __name__ == "__main__":
+    test_one_qubit()
+    # test_two_qubits()

@@ -13,3 +13,19 @@ The code contained in this repository requires the following dependencies:
 
 Install dependencies using ``pip install -r requirements.txt``  
 Python 3.9.13 is the version compatible with the dependencies.
+
+## Docker
+Steps to be performed to run the application using docker.
+
+> Prerequisites: Installed docker and docker compose.
+  On Windows you can easily install Docker Desktop, which includes both.
+
+Start the corresponding container by executing:
+```
+docker compose up
+```
+
+If changes were made, execute:
+```
+docker compose up --build
+```

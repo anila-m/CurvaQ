@@ -6,6 +6,7 @@ from qnns.qnn import get_qnn
 import math
 import copy
 import random
+import numpy as np
 
 # Training data Generation functions. 
 # Used for Experiments:

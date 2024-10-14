@@ -1,5 +1,5 @@
-from victor_thesis_landscapes import *
-from victor_thesis_metrics import *
+from landscapes import *
+from metrics import *
 from qnns.cuda_qnn import *
 from qnns.qnn import *
 

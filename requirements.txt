@@ -10,4 +10,6 @@ cirq==0.13.1
 pyquil==3.0.1
 qiskit==0.30.0
 tensorflow==2.15.0
+
 fastapi~=0.115.0
+uvicorn==0.31.1

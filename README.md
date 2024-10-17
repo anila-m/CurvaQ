@@ -29,6 +29,13 @@ If changes were made, execute:
 ```
 docker compose up --build
 ```
+
+To forward port 8000 of the container to port 8000 of your host computer, run:
+```
+docker run -p 8000:8000 qmltoolbox
+```
+
+The OpenAPI documentation can be accessed at ``http://localhost:8000/docs``
 ## Disclaimer of Warranty
 Unless required by applicable law or agreed to in writing, 
 Licensor provides the Work (and each Contributor provides its Contributions) on an "AS IS" BASIS,

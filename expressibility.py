@@ -125,20 +125,6 @@ def expressibility(num_tries, num_bins, num_qubits):
         pl_dist[i] = pl_dist[i] + 1
     pl_dist = np.divide(pl_dist, np.sum(pl_dist))
     expressibility = KL_divergence(pl_dist, haar_dist)
-    plt.suptitle(
-        f"Expressibility: {np.round(expressibility, 5)}\nDistributions for {num_bins} bins, {num_qubits} qubits and {num_tries} samples")
-    x_vals = range(num_bins)
-    plt.bar(x_vals, haar_dist, label="Haar", alpha=.4)
-    plt.bar(x_vals, pl_dist, label="PennyLane Ansatz", alpha=.4)
-    num_ticks = 11
-    tick_locations = np.linspace(0, num_bins - 1, num_ticks)
-    tick_labels = np.round(np.linspace(0, 1, num_ticks), 1)
-    plt.ylabel("Probability")
-    plt.xlabel("Fidelity")
-    plt.xticks(tick_locations, tick_labels)
-    plt.tight_layout()
-    plt.legend()
-    plt.show()
 
+    return expressibility
 
-expressibility(num_tries=100000, num_bins=50, num_qubits=2)

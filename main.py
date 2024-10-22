@@ -3,6 +3,13 @@ from metrics import *
 from qnns.cuda_qnn import *
 from qnns.qnn import *
 from expressibility import *
+from entanglement import *
+
+from circuit import CircuitDescriptor
+import cirq
+import sympy
+from qiskit import QuantumCircuit
+
 from fastapi import *
 
 app = FastAPI()
@@ -54,8 +61,13 @@ def calculate_ansatz_characteristics(num_qubits: int, num_layers: int):
 
 
 @app.get("/ansatz_characteristics/entanglement_capability")
-def calculate_entanglement_capability(num_qubits: int, num_layers: int):
-    return {"entanglement_capability": 3}
+def calculate_entanglement_capability(qasm:str, measure: str, shots: int):
+
+    cricuit = CircuitDescriptor.from_qasm(qasm,[],None,"qiskit")
+    
+
+    entagle_calc = EntanglementCapability(cricuit)
+    return {"entanglement_capability": entagle_calc.entanglement_capability(measure, shots)}
 
 
 @app.get("/ansatz_characteristics/expressibility")

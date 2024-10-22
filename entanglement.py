@@ -28,7 +28,7 @@ class EntanglementCapability(MetaExplorer):
 
     def __init__(
         self,
-        circuit: CircuitDescriptor,
+        circuit: CircuitDescriptor,      
         noise_model: typing.Union[
             cirqNoiseModel, qiskitNoiseModel, pyquilNoiseModel, None
         ] = None,

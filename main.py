@@ -10,75 +10,214 @@ import cirq
 import sympy
 from qiskit import QuantumCircuit
 
-from fastapi import *
+from flask import Flask
+from flask import jsonify, abort, request
+import logging
+from flask_smorest import Api
+from flask_smorest import Blueprint
+import marshmallow as ma
+from marshmallow import fields, ValidationError
+import threading
 
-app = FastAPI()
+app = Flask(__name__)
+
+app.config.update(
+    API_TITLE = "QML Toolbox",
+    API_VERSION = "0.1",
+    OPENAPI_VERSION = "3.0.2",
+    OPENAPI_URL_PREFIX = "/api",
+    OPENAPI_SWAGGER_UI_PATH = "/swagger-ui",
+    OPENAPI_SWAGGER_UI_VERSION = "3.24.2",
+    OPENAPI_SWAGGER_UI_URL = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.24.2/",
+
+    API_SPEC_OPTIONS = {
+        "info": {
+            "description": "Toolbox for QML developement",
+        },
+        #"license": {"name": "Apache v2 License"},
+    }
+)
+
+api = Api(app)
 
 
-@app.get("/metrics")
-def calculate_metrics(num_qubits: int, num_layers: int):
-    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(1, 1, unitary)
-    return {"total_variation": calc_total_variation(landscape),
+@app.route("/")
+def heartbeat():
+    return '<h1>QML-Toolbox</h1> <h3>View the API Docs <a href="/api/swagger-ui">here</a></h3>'
+
+
+class MetricsRequestSchema(ma.Schema):
+    num_qubits = ma.fields.Int()
+    num_layers = ma.fields.Int()
+
+class MetricsResponseSchema(ma.Schema):
+    total_variation = ma.fields.Float()
+    fourier_density = ma.fields.Float()
+    inverse_standard_gradient_deviation = ma.fields.List(ma.fields.Float())
+    scalar_curvature = ma.fields.String() #Datentyp anpassen
+
+
+
+
+blp_metrics = Blueprint(
+    "metrics",
+    __name__,
+    "calculates the metrics"
+)
+@blp_metrics.route("/metrics", methods=["POST"])
+@blp_metrics.arguments(
+    MetricsRequestSchema,
+    example=dict(
+        num_qubits=1,
+        num_layers=1
+    ),
+)
+@blp_metrics.response(200, MetricsResponseSchema)
+def calculate_metrics(inputs: dict):
+    print(inputs)
+    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], unitary)
+    outputs ={"total_variation": calc_total_variation(landscape),
             "fourier_density": calc_fourier_density(landscape),
             "inverse_standard_gradient_deviation": calc_IGSD(landscape),
-            "scalar_curvature": calc_scalar_curvature(landscape)}
+            "scalar_curvature": str(calc_scalar_curvature(landscape))
+    }  
+
+    return outputs
 
 
-@app.get("/metrics/total_variation", response_model=dict[str, float])
-def calculate_total_variation(num_qubits: int, num_layers: int) -> dict[str, float]:
-    if num_qubits < 1 or num_layers < 1:
-        raise HTTPException(status_code=404, detail="invalid numer of qubits or layers")
-    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(1, 1, unitary)
+@blp_metrics.route("/calculate_total_variation", methods=["POST"])
+@blp_metrics.arguments(
+    MetricsRequestSchema,
+    example=dict(
+        num_qubits=1,
+        num_layers=1
+    ),
+)
+@blp_metrics.response(200, MetricsResponseSchema)
+def calculate_total_variation(inputs: dict):
+    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], unitary)
     return {"total_variation": calc_total_variation(landscape)}
 
 
-@app.get("/metrics/fourier_density", response_model=dict[str, float])
-def calculate_fourier_density(num_qubits: int, num_layers: int) -> dict[str, float]:
-    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(1, 1, unitary)
+@blp_metrics.route("/fourier_density", methods=["POST"])
+@blp_metrics.arguments(
+    MetricsRequestSchema,
+    example=dict(
+        num_qubits=1,
+        num_layers=1
+    ),
+)
+@blp_metrics.response(200, MetricsResponseSchema)
+def calculate_fourier_density(inputs: dict):
+    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], unitary)
     return {"fourier_density": calc_fourier_density(landscape)}
 
 
-@app.get("/metrics/inverse_standard_gradient_deviation", response_model=dict[str, list])
-def calculate_inverse_standard_gradient_deviation(num_qubits: int, num_layers: int) -> dict[str, list]:
-    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(1, 1, unitary)
+@blp_metrics.route("/inverse_standard_gradient_deviation", methods=["POST"])
+@blp_metrics.arguments(
+    MetricsRequestSchema,
+    example=dict(
+        num_qubits=1,
+        num_layers=1
+    ),
+)
+@blp_metrics.response(200, MetricsResponseSchema)
+def calculate_inverse_standard_gradient_deviation(inputs: dict):
+    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], unitary)
     return {"inverse_standard_gradient_deviation": calc_IGSD(landscape).tolist()}
 
 
-@app.get("/metrics/scalar_curvature", response_model=dict[str, list])
-def calculate_scalar_curvature(num_qubits: int, num_layers: int) -> dict[str, list]:
-    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(1, 1, unitary)
-    return {"scalar_curvature": calc_scalar_curvature(landscape).tolist()}
 
+@blp_metrics.route("/scalar_curvature", methods=["POST"])
+@blp_metrics.arguments(
+    MetricsRequestSchema,
+    example=dict(
+        num_qubits=1,
+        num_layers=1
+    ),
+)
+@blp_metrics.response(200, MetricsResponseSchema)
+def calculate_scalar_curvature(inputs: dict):
+    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], unitary)
+    return {"scalar_curvature": str(calc_scalar_curvature(landscape).tolist())}
 
+'''
 @app.get("/ansatz_characteristics")
 def calculate_ansatz_characteristics(num_qubits: int, num_layers: int):
     return {"ansatz_characteristics": 3}
+'''
+
+blp_characteristics = Blueprint(
+    "ansatz_characteristics",
+    __name__,
+    "calculates the ansatz_characteristics"
+)
+
+class EntanglementCapabilityRequestSchema(ma.Schema):
+    qasm = ma.fields.String()
+    measure = ma.fields.String()
+    shots = ma.fields.Int()
+
+class EntanglementCapabilityResponseSchema(ma.Schema):
+    entanglement_capability = ma.fields.Float()
+
+@blp_characteristics.route("/entanglement_capability", methods=["POST"])
+@blp_characteristics.arguments(
+    EntanglementCapabilityRequestSchema,
+    example=dict(
+        qasm='''OPENQASM 3;include "stdgates.inc";input float[64] a;input float[64] a1;input float[64] b;input float[64] b1;input float[64] c;qubit[4] _all_qubits;let q = _all_qubits[0:3];u3(a, b, c) q[0];cx q[0], q[1];cx q[1], q[2];cx q[2], q[3];u3(c, a1, b1) q[3];cx q[3], q[0];cx q[1], q[3];u3(b1, a1, c) q[2];''',
+        measure='''meyer-wallach''',
+        shots = 1024
 
 
-@app.get("/ansatz_characteristics/entanglement_capability")
-def calculate_entanglement_capability(qasm:str, measure: str, shots: int):
+    ),
+)
+@blp_characteristics.response(200, EntanglementCapabilityResponseSchema)
+def calculate_entanglement_capability(inputs: dict):
 
-    cricuit = CircuitDescriptor.from_qasm(qasm,[],None,"qiskit")
+    cricuit = CircuitDescriptor.from_qasm(inputs["qasm"],[],None,"qiskit")
     
 
     entagle_calc = EntanglementCapability(cricuit)
-    return {"entanglement_capability": entagle_calc.entanglement_capability(measure, shots)}
+    return {"entanglement_capability": entagle_calc.entanglement_capability(inputs["measure"], inputs["shots"])}
 
 
-@app.get("/ansatz_characteristics/expressibility")
-def calculate_expressibility(num_tries: int, num_bins: int, num_qubits: int):
-    return {"expressibility": expressibility(num_tries, num_bins, num_qubits)}
+
+class ExpressibilityRequestSchema(ma.Schema):
+    num_tries = ma.fields.Int()
+    num_bins = ma.fields.Int()
+    num_qubits = ma.fields.Int()
 
 
+
+class ExpressibilityResponseSchema(ma.Schema):
+    expressibility = ma.fields.Float()
+
+@blp_characteristics.route("/expressibility", methods=["POST"])
+@blp_characteristics.arguments(
+    ExpressibilityRequestSchema,
+    example=dict(
+        num_tries = 1000,
+        num_bins = 50,
+        num_qubits = 2
+
+
+    ),
+)
+@blp_characteristics.response(200, ExpressibilityResponseSchema)
+def calculate_expressibility(inputs:dict):
+    return {"expressibility": expressibility(inputs["num_tries"] , inputs["num_bins"], inputs["num_qubits"])}
+
+'''
 @app.get("/ZX-calculus")
 def calculate_zx_calculus(num_qubits: int, num_layers: int):
     return {"ZX-calculus": 4}
-
+'''
 
 def get_loss_landscape(num_qubits, num_layers, unitary):
     qnn = get_qnn(qnn_name="CudaU2", x_wires=list(range(num_qubits)), num_layers=num_layers, device="cpu")
@@ -144,14 +283,20 @@ def test(qnn_type, num_qubits, num_layers, unitary):
     calculate_metrics(landscape)
 
 
+api.register_blueprint(blp_metrics)
+api.register_blueprint(blp_characteristics)
+
 matrix = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
 unitary = torch.tensor(matrix, dtype=torch.complex128, device="cpu")
 # test("Pennylane", 2, 3, unitary)
 
 
 if __name__ == "__main__":
-    print("\nOne qubit:")
-    test_one_qubit()
+    #print("\nOne qubit:")
+    #test_one_qubit()
 
-    print("\nTwo qubits:")
-    test_two_qubits()
+    #print("\nTwo qubits:")
+    #test_two_qubits()
+
+    print("Starting Server")
+    app.run(host="0.0.0.0", port=8000)

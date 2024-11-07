@@ -8,6 +8,9 @@ from expressibility import *
 
 from fastapi import *
 
+from subprocess import Popen, PIPE
+
+
 app = FastAPI()
 
 
@@ -70,6 +73,21 @@ def calculate_expressibility(num_tries: int, num_bins: int, num_qubits: int):
 @app.get("/ZX-calculus")
 def calculate_zx_calculus(num_qubits: int, num_layers: int):
     return {"ZX-calculus": 4}
+
+
+binary_path = 'zx-calculus/target/release/bpdetect'
+
+def zx_calculus(ansatz: str, qubits: int, layers: int, hamiltonian: str, parameter: int):
+    p = Popen([binary_path, ansatz, str(qubits), str(layers), hamiltonian, str(parameter)], stdout=PIPE, stderr=PIPE)
+
+    variance, _ = p.communicate()
+
+    if p.returncode != 0:
+        print(_.decode('ASCII').strip())
+    else:
+        variance = variance.decode('ASCII').rstrip()
+        s = f"{ansatz}-{qubits}-{layers}-{hamiltonian}-{parameter}: {variance}"
+        print(s)
 
 
 def check_inputs(num_qubits, num_layers):
@@ -136,7 +154,8 @@ def test_metrics():
 
 
 if __name__ == "__main__":
-    test_qnn_generation()
-    test_input_generation()
-    test_loss_landscape_calculation()
-    test_metrics()
+    # test_qnn_generation()
+    # test_input_generation()
+    # test_loss_landscape_calculation()
+    # test_metrics()
+    zx_calculus(ansatz='sim1', qubits=2, layers=1, hamiltonian='ZZ', parameter=0)

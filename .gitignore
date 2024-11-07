@@ -4,4 +4,6 @@ __pycache__
 
 .vscode
 
-qnns\__pycache__
+qnns/__pycache__
+
+zx-calculus/target

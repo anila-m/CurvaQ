@@ -1,7 +1,90 @@
-from victor_thesis_landscapes import *
-from victor_thesis_metrics import *
+from landscapes import *
+from metrics import *
 from qnns.cuda_qnn import *
 from qnns.qnn import *
+from expressibility import *
+from entanglement import *
+
+from circuit import CircuitDescriptor
+import cirq
+import sympy
+from qiskit import QuantumCircuit
+
+from fastapi import *
+
+app = FastAPI()
+
+
+@app.get("/metrics")
+def calculate_metrics(num_qubits: int, num_layers: int):
+    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(1, 1, unitary)
+    return {"total_variation": calc_total_variation(landscape),
+            "fourier_density": calc_fourier_density(landscape),
+            "inverse_standard_gradient_deviation": calc_IGSD(landscape),
+            "scalar_curvature": calc_scalar_curvature(landscape)}
+
+
+@app.get("/metrics/total_variation", response_model=dict[str, float])
+def calculate_total_variation(num_qubits: int, num_layers: int) -> dict[str, float]:
+    if num_qubits < 1 or num_layers < 1:
+        raise HTTPException(status_code=404, detail="invalid numer of qubits or layers")
+    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(1, 1, unitary)
+    return {"total_variation": calc_total_variation(landscape)}
+
+
+@app.get("/metrics/fourier_density", response_model=dict[str, float])
+def calculate_fourier_density(num_qubits: int, num_layers: int) -> dict[str, float]:
+    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(1, 1, unitary)
+    return {"fourier_density": calc_fourier_density(landscape)}
+
+
+@app.get("/metrics/inverse_standard_gradient_deviation", response_model=dict[str, list])
+def calculate_inverse_standard_gradient_deviation(num_qubits: int, num_layers: int) -> dict[str, list]:
+    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(1, 1, unitary)
+    return {"inverse_standard_gradient_deviation": calc_IGSD(landscape).tolist()}
+
+
+@app.get("/metrics/scalar_curvature", response_model=dict[str, list])
+def calculate_scalar_curvature(num_qubits: int, num_layers: int) -> dict[str, list]:
+    unitary = torch.tensor(data=np.array([[1, 1], [1, -1]]) / np.sqrt(2), dtype=torch.complex128, device="cpu")
+    landscape = get_loss_landscape(1, 1, unitary)
+    return {"scalar_curvature": calc_scalar_curvature(landscape).tolist()}
+
+
+@app.get("/ansatz_characteristics")
+def calculate_ansatz_characteristics(num_qubits: int, num_layers: int):
+    return {"ansatz_characteristics": 3}
+
+
+@app.get("/ansatz_characteristics/entanglement_capability")
+def calculate_entanglement_capability(qasm:str, measure: str, shots: int):
+
+    cricuit = CircuitDescriptor.from_qasm(qasm,[],None,"qiskit")
+    
+
+    entagle_calc = EntanglementCapability(cricuit)
+    return {"entanglement_capability": entagle_calc.entanglement_capability(measure, shots)}
+
+
+@app.get("/ansatz_characteristics/expressibility")
+def calculate_expressibility(num_tries: int, num_bins: int, num_qubits: int):
+    return {"expressibility": expressibility(num_tries, num_bins, num_qubits)}
+
+
+@app.get("/ZX-calculus")
+def calculate_zx_calculus(num_qubits: int, num_layers: int):
+    return {"ZX-calculus": 4}
+
+
+def get_loss_landscape(num_qubits, num_layers, unitary):
+    qnn = get_qnn(qnn_name="CudaU2", x_wires=list(range(num_qubits)), num_layers=num_layers, device="cpu")
+    inputs = generate_random_datapoints(numb_points=2, s_rank=1, U=unitary)
+    loss_landscape = generate_2d_loss_landscape(grid_size=50, inputs=inputs, U=unitary, qnn=qnn)
+    return loss_landscape
 
 
 def calculate_metrics(landscape):

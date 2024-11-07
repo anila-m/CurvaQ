@@ -29,3 +29,23 @@ If changes were made, execute:
 ```
 docker compose up --build
 ```
+
+To forward port 8000 of the container to port 8000 of your host computer, run:
+```
+docker run -p 8000:8000 qmltoolbox
+```
+
+The OpenAPI documentation can be accessed at ``http://localhost:8000/docs``
+## Disclaimer of Warranty
+Unless required by applicable law or agreed to in writing, 
+Licensor provides the Work (and each Contributor provides its Contributions) on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation,
+any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE.
+You are solely responsible for determining the appropriateness of using or redistributing the Work
+and assume any risks associated with Your exercise of permissions under this License.
+
+## Haftungsausschluss
+Dies ist ein Forschungsprototyp.
+Die Haftung für entgangenen Gewinn, Produktionsausfall, Betriebsunterbrechung, entgangene Nutzungen,
+Verlust von Daten und Informationen, Finanzierungsaufwendungen sowie sonstige Vermögens- und Folgeschäden ist,
+außer in Fällen von grober Fahrlässigkeit, Vorsatz und Personenschäden, ausgeschlossen.

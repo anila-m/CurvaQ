@@ -5,10 +5,9 @@ from classic_training import cost_func
 #from data import *
 #import numpy as np
 #from utils import *
-from victor_thesis_utils import *
-from victor_thesis_landscapes import *
+from utils import *
+from landscapes import *
 #from victor_thesis_plots import *
-from victor_thesis_metrics import *
 
 
 # n-dimensional scalar curvature

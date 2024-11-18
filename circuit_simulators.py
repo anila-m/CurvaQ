@@ -72,34 +72,38 @@ class CircuitSimulator:
         if self.circuit.default_backend == "qiskit":
             circuit = self.circuit.qiskit_circuit.assign_parameters(param_resolver)
             if self.noise_model is not None:
-                circuit.snapshot("final", snapshot_type="density_matrix")
+                #circuit.snapshot("final", snapshot_type="density_matrix")
+                circuit.save_state("final")
+
+                backend = AerSimulator(method="density_matrix")
+                circuit = transpile(circuit, backend)
+
+                '''
                 result = qiskit.execute(
                     circuit,
                     qiskit.Aer.get_backend("qasm_simulator"),
                     shots=shots,
                     noise_model=self.noise_model,
                     backend_options={"method": "density_matrix"},
-                ).result()
-                result_data = result.data(0)["snapshots"]["density_matrix"]["final"][0][
+                ).result()'''
+
+                result = backend.run(circuit, parameter_binds=[param_resolver]).result()
+
+                print(result)
+                print("---")
+
+                result_data = result.data(0)["final"][0][
                     "value"
                 ]
             else:
-                #circuit.snapshot("final", snapshot_type="statevector")
-
-                #vector = Statevector(circuit)
                 circuit.save_statevector("final")
 
                 backend = AerSimulator(method="statevector")
                 circuit = transpile(circuit, backend)
-                '''
-                result = qiskit.execute(
-                    circuit, qiskit.Aer.get_backend("aer_simulator_statevector")
-                ).result()'''
+
                 result = backend.run(circuit, parameter_binds=[param_resolver]).result()
 
-                result_data = result.data(0)["final"][0]
-
-                print(result_data)
+                result_data = result.data(0)["final"]
 
         elif self.circuit.default_backend == "cirq":
 

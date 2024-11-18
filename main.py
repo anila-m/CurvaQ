@@ -14,6 +14,9 @@ from qiskit import QuantumCircuit
 import qiskit.qasm3
 from qiskit.circuit import Parameter
 
+#from qiskit_aer.noise import NoiseModel as qiskitNoiseModel
+import qiskit_aer.noise as qiskitNoiseModel
+
 import cirq
 from qiskit import QuantumCircuit
 
@@ -174,7 +177,7 @@ class EntanglementCapabilityResponseSchema(ma.Schema):
     EntanglementCapabilityRequestSchema,
     example=dict(
         qasm='''OPENQASM 3;include "stdgates.inc";input float[64] a;input float[64] a1;input float[64] b;input float[64] b1;input float[64] c;qubit[4] _all_qubits;let q = _all_qubits[0:3];u3(a, b, c) q[0];cx q[0], q[1];cx q[1], q[2];cx q[2], q[3];u3(c, a1, b1) q[3];cx q[3], q[0];cx q[1], q[3];u3(b1, a1, c) q[2];''',
-        measure='''meyer-wallach''',
+        measure='''scott''',
         shots = 1024
 
 
@@ -190,9 +193,12 @@ def calculate_entanglement_capability(inputs: dict):
 
     qcircuit.rx(phi, 0)
 
+    noise_model = qiskitNoiseModel.NoiseModel()
+    noise_model = qiskitNoiseModel.NoiseModel()
+
     cricuit = CircuitDescriptor(qcircuit,[phi],None)
 
-    entagle_calc = EntanglementCapability(cricuit)
+    entagle_calc = EntanglementCapability(cricuit, noise_model)
     return {"entanglement_capability": entagle_calc.entanglement_capability(inputs["measure"], inputs["shots"])}
 
 

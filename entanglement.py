@@ -3,7 +3,7 @@
 import itertools
 import typing
 
-from qiskit.providers.aer.noise import NoiseModel as qiskitNoiseModel
+from qiskit_aer.noise import NoiseModel as qiskitNoiseModel
 from cirq.devices.noise_model import NoiseModel as cirqNoiseModel
 from pyquil.noise import NoiseModel as pyquilNoiseModel
 

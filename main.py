@@ -3,11 +3,19 @@ from metrics import *
 from qnns.cuda_qnn import *
 from qnns.qnn import *
 from expressibility import *
-# from entanglement import *
+from entanglement import *
 
-# from circuit import CircuitDescriptor
-# import cirq
-# from qiskit import QuantumCircuit
+from circuit import CircuitDescriptor
+
+from circuit import CircuitDescriptor
+import cirq
+from qiskit import QuantumCircuit
+
+import qiskit.qasm3
+from qiskit.circuit import Parameter
+
+import cirq
+from qiskit import QuantumCircuit
 
 from flask import Flask
 from flask_smorest import Api
@@ -175,8 +183,14 @@ class EntanglementCapabilityResponseSchema(ma.Schema):
 @blp_characteristics.response(200, EntanglementCapabilityResponseSchema)
 def calculate_entanglement_capability(inputs: dict):
 
-    cricuit = CircuitDescriptor.from_qasm(inputs["qasm"],[],None,"qiskit")
+    #cricuit = CircuitDescriptor.from_qasm(inputs["qasm"],[],None,"qiskit")
     
+    qcircuit = QuantumCircuit(2)
+    phi = Parameter('phi')
+
+    qcircuit.rx(phi, 0)
+
+    cricuit = CircuitDescriptor(qcircuit,[phi],None)
 
     entagle_calc = EntanglementCapability(cricuit)
     return {"entanglement_capability": entagle_calc.entanglement_capability(inputs["measure"], inputs["shots"])}

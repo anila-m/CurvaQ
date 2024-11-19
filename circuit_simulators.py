@@ -72,29 +72,15 @@ class CircuitSimulator:
         if self.circuit.default_backend == "qiskit":
             circuit = self.circuit.qiskit_circuit.assign_parameters(param_resolver)
             if self.noise_model is not None:
-                #circuit.snapshot("final", snapshot_type="density_matrix")
                 circuit.save_state("final")
 
-                backend = AerSimulator(method="density_matrix")
+                backend = AerSimulator(method="density_matrix", noise_model = self.noise_model)
                 circuit = transpile(circuit, backend)
-
-                '''
-                result = qiskit.execute(
-                    circuit,
-                    qiskit.Aer.get_backend("qasm_simulator"),
-                    shots=shots,
-                    noise_model=self.noise_model,
-                    backend_options={"method": "density_matrix"},
-                ).result()'''
 
                 result = backend.run(circuit, parameter_binds=[param_resolver]).result()
 
-                print(result)
-                print("---")
+                result_data = result.data(0)["final"][0]
 
-                result_data = result.data(0)["final"][0][
-                    "value"
-                ]
             else:
                 circuit.save_statevector("final")
 

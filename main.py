@@ -194,7 +194,6 @@ def calculate_entanglement_capability(inputs: dict):
     qcircuit.rx(phi, 0)
 
     noise_model = qiskitNoiseModel.NoiseModel()
-    noise_model = qiskitNoiseModel.NoiseModel()
 
     cricuit = CircuitDescriptor(qcircuit,[phi],None)
 

@@ -368,7 +368,7 @@ if __name__ == "__main__":
     # test_loss_landscape_calculation()
     # test_metrics()
     # test_api()
-    # zx_calculus(ansatz='sim1', qubits=2, layers=1, hamiltonian='ZZ', parameter=0)
+    zx_calculus(ansatz='sim1', qubits=2, layers=1, hamiltonian='ZZ', parameter=0)
 
     # print("Starting Server")
 

@@ -1,23 +1,16 @@
 from landscapes import *
 from metrics import *
-from qnns.cuda_qnn import *
 from qnns.qnn import *
 from expressibility import *
 from entanglement import *
 
 from circuit import CircuitDescriptor
 
-from circuit import CircuitDescriptor
-import cirq
-from qiskit import QuantumCircuit
-
 import qiskit.qasm3
 from qiskit.circuit import Parameter
 
 #from qiskit_aer.noise import NoiseModel as qiskitNoiseModel
 import qiskit_aer.noise as qiskitNoiseModel
-
-import cirq
 from qiskit import QuantumCircuit
 
 from flask import Flask
@@ -56,14 +49,15 @@ def heartbeat():
 class MetricsRequestSchema(ma.Schema):
     num_qubits = ma.fields.Int()
     num_layers = ma.fields.Int()
+    schmidt_rank = ma.fields.Int()
+    num_data_points = ma.fields.Int()
+    grid_size = ma.fields.Int()
 
 class MetricsResponseSchema(ma.Schema):
     total_variation = ma.fields.Float()
     fourier_density = ma.fields.Float()
     inverse_standard_gradient_deviation = ma.fields.List(ma.fields.Float())
     scalar_curvature = ma.fields.String() #Datentyp anpassen
-
-
 
 
 blp_metrics = Blueprint(
@@ -76,14 +70,17 @@ blp_metrics = Blueprint(
     MetricsRequestSchema,
     example=dict(
         num_qubits=1,
-        num_layers=1
+        num_layers=1,
+        schmidt_rank=2,
+        num_data_points=3,
+        grid_size=3,
     ),
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_metrics(inputs: dict):
     print(inputs)
     unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"])
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     outputs ={"total_variation": calc_total_variation(landscape),
             "fourier_density": calc_fourier_density(landscape),
             "inverse_standard_gradient_deviation": calc_IGSD(landscape),
@@ -97,13 +94,16 @@ def calculate_metrics(inputs: dict):
     MetricsRequestSchema,
     example=dict(
         num_qubits=1,
-        num_layers=1
+        num_layers=1,
+        schmidt_rank=2,
+        num_data_points=3,
+        grid_size=3,
     ),
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_total_variation(inputs: dict):
     unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"])
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"total_variation": calc_total_variation(landscape)}
 
 
@@ -112,13 +112,16 @@ def calculate_total_variation(inputs: dict):
     MetricsRequestSchema,
     example=dict(
         num_qubits=1,
-        num_layers=1
+        num_layers=1,
+        schmidt_rank=2,
+        num_data_points=3,
+        grid_size=3,
     ),
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_fourier_density(inputs: dict):
     unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"])
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"fourier_density": calc_fourier_density(landscape)}
 
 
@@ -127,13 +130,16 @@ def calculate_fourier_density(inputs: dict):
     MetricsRequestSchema,
     example=dict(
         num_qubits=1,
-        num_layers=1
+        num_layers=1,
+        schmidt_rank=2,
+        num_data_points=3,
+        grid_size=3,
     ),
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_inverse_standard_gradient_deviation(inputs: dict):
     unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"])
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"inverse_standard_gradient_deviation": calc_IGSD(landscape).tolist()}
 
 
@@ -143,13 +149,16 @@ def calculate_inverse_standard_gradient_deviation(inputs: dict):
     MetricsRequestSchema,
     example=dict(
         num_qubits=1,
-        num_layers=1
+        num_layers=1,
+        schmidt_rank=2,
+        num_data_points=3,
+        grid_size=3,
     ),
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_scalar_curvature(inputs: dict):
     unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
-    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"])
+    landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"scalar_curvature": str(calc_scalar_curvature(landscape).tolist())}
 
 '''
@@ -187,7 +196,7 @@ class EntanglementCapabilityResponseSchema(ma.Schema):
 def calculate_entanglement_capability(inputs: dict):
 
     #cricuit = CircuitDescriptor.from_qasm(inputs["qasm"],[],None,"qiskit")
-    
+
     qcircuit = QuantumCircuit(2)
     phi = Parameter('phi')
 
@@ -233,7 +242,7 @@ def calculate_zx_calculus(num_qubits: int, num_layers: int):
     return {"ZX-calculus": 4}
 '''
 
-def get_loss_landscape(num_qubits, num_layers, schmidt_rank=2, num_data_points=3, grid_size=3):
+def get_loss_landscape(num_qubits, num_layers, schmidt_rank, num_data_points, grid_size):
     qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu")
     unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
     inputs = generate_data_points(type_of_data=1, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)

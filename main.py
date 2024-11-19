@@ -195,7 +195,7 @@ class EntanglementCapabilityResponseSchema(ma.Schema):
 )
 @blp_characteristics.response(200, EntanglementCapabilityResponseSchema)
 def calculate_entanglement_capability(inputs: dict):
-
+    
     #cricuit = CircuitDescriptor.from_qasm(inputs["qasm"],[],None,"qiskit")
 
     qcircuit = QuantumCircuit(2)
@@ -268,6 +268,8 @@ def check_metric_inputs(inputs):
         raise InvalidInputError("The number of layers (num_layers) must be at least 1.")
     elif inputs["schmidt_rank"] < 1:
         raise InvalidInputError("The Schmidt rank (schmidt_rank) must be at least 1.")
+    elif inputs["schmidt_rank"] > 2**inputs["num_qubits"]:
+        raise InvalidInputError("The Schmidt rank (schmidt_rank) has to be equal or less than 2^num_qubits.")
     elif inputs["num_data_points"] < 1:
         raise InvalidInputError("The number of data points (num_data_points) must be at least 1.")
     elif inputs["grid_size"] < 1:
@@ -324,8 +326,11 @@ def test_metrics():
 def test_api():
     with app.test_client() as client:
         inputs = {
-            "num_qubits": 3,
-            "num_layers": 1
+            "num_qubits": 1,
+            "num_layers": 1,
+            "schmidt_rank": 3,
+            "num_data_points": 3,
+            "grid_size": 3
         }
 
         response = client.post("/calculate_total_variation", json=inputs)

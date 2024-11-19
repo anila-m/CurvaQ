@@ -8,7 +8,16 @@ import cirq
 import numpy as np
 import qiskit
 
-from qiskit.providers.aer.noise import NoiseModel as qiskitNoiseModel
+from qiskit import transpile
+
+import qiskit.pulse.instructions
+
+from qiskit_aer import AerSimulator
+from qiskit.quantum_info import Statevector
+
+from qiskit_aer.library import *
+
+from qiskit_aer.noise import NoiseModel as qiskitNoiseModel
 from cirq.devices.noise_model import NoiseModel as cirqNoiseModel
 from pyquil.noise import NoiseModel as pyquilNoiseModel
 
@@ -61,25 +70,26 @@ class CircuitSimulator:
         :raises NotImplementedError: if circuit simulation is not supported for a backend
         """
         if self.circuit.default_backend == "qiskit":
-            circuit = self.circuit.qiskit_circuit.bind_parameters(param_resolver)
+            circuit = self.circuit.qiskit_circuit.assign_parameters(param_resolver)
             if self.noise_model is not None:
-                circuit.snapshot("final", snapshot_type="density_matrix")
-                result = qiskit.execute(
-                    circuit,
-                    qiskit.Aer.get_backend("qasm_simulator"),
-                    shots=shots,
-                    noise_model=self.noise_model,
-                    backend_options={"method": "density_matrix"},
-                ).result()
-                result_data = result.data(0)["snapshots"]["density_matrix"]["final"][0][
-                    "value"
-                ]
+                circuit.save_state("final")
+
+                backend = AerSimulator(method="density_matrix", noise_model = self.noise_model)
+                circuit = transpile(circuit, backend)
+
+                result = backend.run(circuit, parameter_binds=[param_resolver]).result()
+
+                result_data = result.data(0)["final"][0]
+
             else:
-                circuit.snapshot("final", snapshot_type="statevector")
-                result = qiskit.execute(
-                    circuit, qiskit.Aer.get_backend("aer_simulator_statevector")
-                ).result()
-                result_data = result.data(0)["snapshots"]["statevector"]["final"][0]
+                circuit.save_statevector("final")
+
+                backend = AerSimulator(method="statevector")
+                circuit = transpile(circuit, backend)
+
+                result = backend.run(circuit, parameter_binds=[param_resolver]).result()
+
+                result_data = result.data(0)["final"]
 
         elif self.circuit.default_backend == "cirq":
 

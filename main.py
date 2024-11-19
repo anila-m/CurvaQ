@@ -79,7 +79,7 @@ blp_metrics = Blueprint(
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_metrics(inputs: dict):
     print(inputs)
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    check_metric_inputs(inputs)
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     outputs ={"total_variation": calc_total_variation(landscape),
             "fourier_density": calc_fourier_density(landscape),
@@ -102,7 +102,7 @@ def calculate_metrics(inputs: dict):
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_total_variation(inputs: dict):
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    check_metric_inputs(inputs)
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"total_variation": calc_total_variation(landscape)}
 
@@ -120,7 +120,7 @@ def calculate_total_variation(inputs: dict):
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_fourier_density(inputs: dict):
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    check_metric_inputs(inputs)
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"fourier_density": calc_fourier_density(landscape)}
 
@@ -138,7 +138,7 @@ def calculate_fourier_density(inputs: dict):
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_inverse_standard_gradient_deviation(inputs: dict):
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    check_metric_inputs(inputs)
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"inverse_standard_gradient_deviation": calc_IGSD(landscape).tolist()}
 
@@ -157,7 +157,7 @@ def calculate_inverse_standard_gradient_deviation(inputs: dict):
 )
 @blp_metrics.response(200, MetricsResponseSchema)
 def calculate_scalar_curvature(inputs: dict):
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(inputs["num_qubits"])), dtype=torch.complex128, device="cpu")
+    check_metric_inputs(inputs)
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"scalar_curvature": str(calc_scalar_curvature(landscape).tolist())}
 
@@ -172,6 +172,7 @@ blp_characteristics = Blueprint(
     __name__,
     "calculates the ansatz_characteristics"
 )
+
 
 class EntanglementCapabilityRequestSchema(ma.Schema):
     qasm = ma.fields.String()
@@ -249,6 +250,28 @@ def get_loss_landscape(num_qubits, num_layers, schmidt_rank, num_data_points, gr
     dimensions = num_qubits * num_layers * 3
     loss_landscape = generate_loss_landscape(grid_size=grid_size, dimensions=dimensions, inputs=inputs, U=unitary, qnn=qnn)
     return loss_landscape
+
+
+class InvalidInputError(Exception):
+    pass
+
+@app.errorhandler(InvalidInputError)
+def handle_invalid_input(error):
+    response = {"error": str(error)}
+    return response, 400
+
+
+def check_metric_inputs(inputs):
+    if inputs["num_qubits"] < 1:
+        raise InvalidInputError("The number of qubits (num_qubits) must be at least 1.")
+    elif inputs["num_layers"] < 1:
+        raise InvalidInputError("The number of layers (num_layers) must be at least 1.")
+    elif inputs["schmidt_rank"] < 1:
+        raise InvalidInputError("The Schmidt rank (schmidt_rank) must be at least 1.")
+    elif inputs["num_data_points"] < 1:
+        raise InvalidInputError("The number of data points (num_data_points) must be at least 1.")
+    elif inputs["grid_size"] < 1:
+        raise InvalidInputError("The grid size (grid_size) must be at least 1.")
 
 
 def test(qnn_type, num_qubits, num_layers, unitary):

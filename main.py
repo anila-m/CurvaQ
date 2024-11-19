@@ -2,12 +2,14 @@ from landscapes import *
 from metrics import *
 from qnns.qnn import *
 from expressibility import *
-from entanglement import *
+# from entanglement import *
 
 from circuit import CircuitDescriptor
 
 import qiskit.qasm3
 from qiskit.circuit import Parameter
+from subprocess import Popen, PIPE
+
 
 #from qiskit_aer.noise import NoiseModel as qiskitNoiseModel
 import qiskit_aer.noise as qiskitNoiseModel
@@ -18,6 +20,7 @@ from flask_smorest import Api
 from flask_smorest import Blueprint
 import marshmallow as ma
 from marshmallow import fields, ValidationError
+
 
 app = Flask(__name__)
 
@@ -143,7 +146,6 @@ def calculate_inverse_standard_gradient_deviation(inputs: dict):
     return {"inverse_standard_gradient_deviation": calc_IGSD(landscape).tolist()}
 
 
-
 @blp_metrics.route("/scalar_curvature", methods=["POST"])
 @blp_metrics.arguments(
     MetricsRequestSchema,
@@ -178,6 +180,7 @@ class EntanglementCapabilityRequestSchema(ma.Schema):
     qasm = ma.fields.String()
     measure = ma.fields.String()
     shots = ma.fields.Int()
+
 
 class EntanglementCapabilityResponseSchema(ma.Schema):
     entanglement_capability = ma.fields.Float()
@@ -236,6 +239,22 @@ class ExpressibilityResponseSchema(ma.Schema):
 @blp_characteristics.response(200, ExpressibilityResponseSchema)
 def calculate_expressibility(inputs:dict):
     return {"expressibility": expressibility(inputs["num_tries"] , inputs["num_bins"], inputs["num_qubits"])}
+
+
+binary_path = 'zx-calculus/target/release/bpdetect'
+
+def zx_calculus(ansatz: str, qubits: int, layers: int, hamiltonian: str, parameter: int):
+    p = Popen([binary_path, ansatz, str(qubits), str(layers), hamiltonian, str(parameter)], stdout=PIPE, stderr=PIPE)
+
+    variance, _ = p.communicate()
+
+    if p.returncode != 0:
+        print(_.decode('ASCII').strip())
+    else:
+        variance = variance.decode('ASCII').rstrip()
+        s = f"{ansatz}-{qubits}-{layers}-{hamiltonian}-{parameter}: {variance}"
+        print(s)
+
 
 '''
 @app.get("/ZX-calculus")

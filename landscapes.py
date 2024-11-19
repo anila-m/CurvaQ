@@ -5,6 +5,7 @@ from data import *
 # from generate_experiments import get_qnn
 import numpy as np
 # from utils import *
+
 from metrics import *
 
 
@@ -139,6 +140,7 @@ def generate_loss_landscape(grid_size, dimensions, inputs, U, qnn):
         qnn.params = torch.tensor(param_list, dtype=torch.float64, requires_grad=True).reshape(qnn.params.shape)
         cost = cost_func(inputs, y_true, qnn, device="cpu")
         landscape[idx] = cost.item()
+
     return landscape
 
 

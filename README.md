@@ -9,7 +9,19 @@ The code contained in this repository requires the following dependencies:
 - orqviz==0.5.0
 - PennyLane==0.27.0
 - scipy==1.13.1
-- torch==2.0.0
+- torch==2.2.0
+- cirq==0.13.1
+- pyquil==3.0.1
+- qiskit==1.2.4
+- qiskit-aer==0.14.1
+- tensorflow==2.15.0
+- Flask==2.1.2
+- flask-smorest==0.39.0
+- ply==3.11
+- qiskit_qasm3_import
+- marshmallow~=3.23.1
+- sympy~=1.13.3
+- tqdm~=4.67.0
 
 Install dependencies using ``pip install -r requirements.txt``  
 Python 3.9.13 is the version compatible with the dependencies.

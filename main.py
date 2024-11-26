@@ -2,7 +2,7 @@ from landscapes import *
 from metrics import *
 from qnns.qnn import *
 from expressibility import *
-# from entanglement import *
+from entanglement import *
 
 from circuit import CircuitDescriptor
 
@@ -178,6 +178,7 @@ blp_characteristics = Blueprint(
 
 class EntanglementCapabilityRequestSchema(ma.Schema):
     qasm = ma.fields.String()
+    noise = ma.fields.Boolean()
     measure = ma.fields.String()
     shots = ma.fields.Int()
 
@@ -189,7 +190,8 @@ class EntanglementCapabilityResponseSchema(ma.Schema):
 @blp_characteristics.arguments(
     EntanglementCapabilityRequestSchema,
     example=dict(
-        qasm='''OPENQASM 3;include "stdgates.inc";input float[64] a;input float[64] a1;input float[64] b;input float[64] b1;input float[64] c;qubit[4] _all_qubits;let q = _all_qubits[0:3];u3(a, b, c) q[0];cx q[0], q[1];cx q[1], q[2];cx q[2], q[3];u3(c, a1, b1) q[3];cx q[3], q[0];cx q[1], q[3];u3(b1, a1, c) q[2];''',
+        qasm='''OPENQASM 3.0;include "stdgates.inc";input float[64] phi;qubit[2] q;rx(phi) q[0];''',
+        noise = True,
         measure='''scott''',
         shots = 1024
 
@@ -198,17 +200,14 @@ class EntanglementCapabilityResponseSchema(ma.Schema):
 )
 @blp_characteristics.response(200, EntanglementCapabilityResponseSchema)
 def calculate_entanglement_capability(inputs: dict):
+    qcircuit = qiskit.qasm3.loads(inputs["qasm"])
     
-    #cricuit = CircuitDescriptor.from_qasm(inputs["qasm"],[],None,"qiskit")
+    if inputs["noise"]:
+        noise_model = qiskitNoiseModel.NoiseModel() 
+    else:
+        noise_model = None
 
-    qcircuit = QuantumCircuit(2)
-    phi = Parameter('phi')
-
-    qcircuit.rx(phi, 0)
-
-    noise_model = qiskitNoiseModel.NoiseModel()
-
-    cricuit = CircuitDescriptor(qcircuit,[phi],None)
+    cricuit = CircuitDescriptor(qcircuit,qcircuit.parameters,None)
 
     entagle_calc = EntanglementCapability(cricuit, noise_model)
     return {"entanglement_capability": entagle_calc.entanglement_capability(inputs["measure"], inputs["shots"])}

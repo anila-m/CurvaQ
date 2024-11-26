@@ -19,7 +19,6 @@ from flask import Flask
 from flask_smorest import Api
 from flask_smorest import Blueprint
 import marshmallow as ma
-from marshmallow import fields, ValidationError
 
 
 app = Flask(__name__)
@@ -163,11 +162,6 @@ def calculate_scalar_curvature(inputs: dict):
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"scalar_curvature": str(calc_scalar_curvature(landscape).tolist())}
 
-'''
-@app.get("/ansatz_characteristics")
-def calculate_ansatz_characteristics(num_qubits: int, num_layers: int):
-    return {"ansatz_characteristics": 3}
-'''
 
 blp_characteristics = Blueprint(
     "ansatz_characteristics",
@@ -220,7 +214,6 @@ class ExpressibilityRequestSchema(ma.Schema):
     num_qubits = ma.fields.Int()
 
 
-
 class ExpressibilityResponseSchema(ma.Schema):
     expressibility = ma.fields.Float()
 
@@ -231,35 +224,65 @@ class ExpressibilityResponseSchema(ma.Schema):
         num_tries = 1000,
         num_bins = 50,
         num_qubits = 2
-
-
     ),
 )
 @blp_characteristics.response(200, ExpressibilityResponseSchema)
 def calculate_expressibility(inputs:dict):
+    check_expressibility_inputs(inputs)
     return {"expressibility": expressibility(inputs["num_tries"] , inputs["num_bins"], inputs["num_qubits"])}
 
 
-binary_path = 'zx-calculus/target/release/bpdetect'
+blp_zx_calculus = Blueprint(
+    "zx-calculus",
+    __name__,
+    "calculates ZX-Calculus"
+)
 
-def zx_calculus(ansatz: str, qubits: int, layers: int, hamiltonian: str, parameter: int):
-    p = Popen([binary_path, ansatz, str(qubits), str(layers), hamiltonian, str(parameter)], stdout=PIPE, stderr=PIPE)
+class ZXCalculusRequestSchema(ma.Schema):
+    ansatz = ma.fields.String()
+    num_qubits = ma.fields.Int()
+    num_layers = ma.fields.Int()
+    hamiltonian = ma.fields.String()
+    parameter = ma.fields.Int()
+
+
+class ZXCalculusResponseSchema(ma.Schema):
+    zx_calculus = ma.fields.String()
+
+
+@blp_zx_calculus.route("/zx-calculus", methods=["POST"])
+@blp_zx_calculus.arguments(
+    ZXCalculusRequestSchema,
+    example=dict(
+        ansatz='sim1',
+        num_qubits=2,
+        num_layers=1,
+        hamiltonian='ZZ',
+        parameter=0,
+    ),
+)
+@blp_zx_calculus.response(200, ZXCalculusResponseSchema)
+def zx_calculus(inputs: dict):
+    check_zx_calculus_inputs(inputs)
+    binary_path = 'zx-calculus/target/release/bpdetect'
+    ansatz = inputs["ansatz"]
+    num_qubits = inputs["num_qubits"]
+    num_layers = inputs["num_layers"]
+    hamiltonian = inputs["hamiltonian"]
+    parameter = inputs["parameter"]
+    p = Popen([binary_path, ansatz, str(num_qubits), str(num_layers), hamiltonian, str(parameter)], stdout=PIPE, stderr=PIPE)
 
     variance, _ = p.communicate()
 
     if p.returncode != 0:
         print(_.decode('ASCII').strip())
+        return {"zx_calculus": _.decode('ASCII').strip()}
     else:
         variance = variance.decode('ASCII').rstrip()
-        s = f"{ansatz}-{qubits}-{layers}-{hamiltonian}-{parameter}: {variance}"
+        s = f"{ansatz}-{num_qubits}-{num_layers}-{hamiltonian}-{parameter}: {variance}"
         print(s)
+        return {"zx_calculus": s}
 
-
-'''
-@app.get("/ZX-calculus")
-def calculate_zx_calculus(num_qubits: int, num_layers: int):
-    return {"ZX-calculus": 4}
-'''
 
 def get_loss_landscape(num_qubits, num_layers, schmidt_rank, num_data_points, grid_size):
     qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu")
@@ -294,14 +317,27 @@ def check_metric_inputs(inputs):
         raise InvalidInputError("The grid size (grid_size) must be at least 1.")
 
 
-def test(qnn_type, num_qubits, num_layers, unitary):
-    qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu")
-    random_unitary = torch.tensor(np.array(random_unitary_matrix(2)), dtype=torch.complex128, device="cpu")
-    inputs = generate_random_datapoints(3, num_qubits, random_unitary)
+def check_entanglement_capability_inputs(inputs):
+    if inputs["shots"] < 1:
+        raise InvalidInputError("The number of shots (shots) must be at least 1.")
 
-    dimensions = len(qnn.params)
-    landscape = generate_loss_landscape(10, dimensions, inputs, unitary, qnn)
-    calculate_metrics(landscape)
+
+def check_expressibility_inputs(inputs):
+    if inputs["num_tries"] < 1:
+        raise InvalidInputError("The number of tries (num_tries) must be at least 1.")
+    elif inputs["num_bins"] < 1:
+        raise InvalidInputError("The number of bins (num_bins) must be at least 1.")
+    elif inputs["num_qubits"] < 1:
+        raise InvalidInputError("The number of qubits (num_qubits) must be at least 1.")
+
+
+def check_zx_calculus_inputs(inputs):
+    if inputs["num_qubits"] < 1:
+        raise InvalidInputError("The number of qubits (num_qubits) must be at least 1.")
+    elif inputs["num_layers"] < 1:
+        raise InvalidInputError("The number of layers (num_layers) must be at least 1.")
+    elif inputs["parameter"] < 0:
+        raise InvalidInputError("The parameter (parameter) must be at least 0.")
 
 
 def test_qnn_generation():
@@ -322,23 +358,13 @@ def test_input_generation():
 
 def test_loss_landscape_calculation():
     for num_qubits in range (1, 4):
-        for num_layers in range(1, 3):
-            print(num_qubits, num_layers)
-            qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu")
-            unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-            inputs = generate_data_points(type_of_data=1, schmidt_rank=2, num_data_points=3, U=unitary, num_qubits=num_qubits)
-            dimensions = num_qubits * num_layers * 3
-            loss_landscape = generate_loss_landscape(grid_size=3, dimensions=dimensions, inputs=inputs, U=unitary, qnn=qnn)
-
-
-def test_metrics():
-    num_qubits = 3
-    num_layers = 1
-    print(calculate_total_variation(num_qubits, num_layers))
-    print(calculate_fourier_density(num_qubits, num_layers))
-    print(calculate_inverse_standard_gradient_deviation(num_qubits, num_layers))
-    print(calculate_scalar_curvature(num_qubits, num_layers))
-    print(calculate_metrics(num_qubits, num_layers))
+        num_layers = 1
+        qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu")
+        unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
+        inputs = generate_data_points(type_of_data=1, schmidt_rank=2, num_data_points=3, U=unitary, num_qubits=num_qubits)
+        dimensions = num_qubits * num_layers * 3
+        loss_landscape = generate_loss_landscape(grid_size=3, dimensions=dimensions, inputs=inputs, U=unitary, qnn=qnn)
+        print(loss_landscape)
 
 
 def test_api():
@@ -346,11 +372,10 @@ def test_api():
         inputs = {
             "num_qubits": 1,
             "num_layers": 1,
-            "schmidt_rank": 3,
+            "schmidt_rank": 2,
             "num_data_points": 3,
             "grid_size": 3
         }
-
         response = client.post("/calculate_total_variation", json=inputs)
 
         print("Status Code:", response.status_code)
@@ -359,15 +384,15 @@ def test_api():
 
 api.register_blueprint(blp_metrics)
 api.register_blueprint(blp_characteristics)
+api.register_blueprint(blp_zx_calculus)
 
 
 if __name__ == "__main__":
     # test_qnn_generation()
     # test_input_generation()
     # test_loss_landscape_calculation()
-    # test_metrics()
     # test_api()
-    zx_calculus(ansatz='sim1', qubits=2, layers=1, hamiltonian='ZZ', parameter=0)
+    # zx_calculus(ansatz='sim1', qubits=2, layers=1, hamiltonian='ZZ', parameter=0)
 
     # print("Starting Server")
 

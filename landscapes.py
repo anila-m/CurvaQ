@@ -1,10 +1,11 @@
 import torch
 import numpy as np
-#from classic_training import cost_func
+# from classic_training import cost_func
 from data import *
-#from generate_experiments import get_qnn
+# from generate_experiments import get_qnn
 import numpy as np
-#from utils import *
+# from utils import *
+
 from metrics import *
 
 
@@ -68,7 +69,7 @@ def generate_random_datapoints(numb_points, s_rank, U):
 
     Args:
         numb_points (int): the number of datapoints you want to generate
-        s_rank (int): the schmidt rank ("level of entanglement") of the data points (with the actual qbits and the qbits for the reference system) 
+        s_rank (int): the schmidt rank ("level of entanglement") of the data points (with the actual qbits and the qbits for the reference system)
         U (unitary): unitary
     Returns:
         tensor: data points used as qubit inputs for qnns
@@ -97,6 +98,7 @@ def get_zero_one_datapoints():
     tensor = torch.tensor(np.array([zero_state, one_state]))
     return tensor
 
+
 # gen n-d loss landscape
 def generate_loss_landscape(grid_size, dimensions, inputs, U, qnn):
     """generates an n-dimensional loss landscape
@@ -117,9 +119,9 @@ def generate_loss_landscape(grid_size, dimensions, inputs, U, qnn):
     param_vals = []
     lanscape_limit = 2 * math.pi
     step_size = lanscape_limit / grid_size
-    #step_size = lanscape_limit / (grid_size-1) # <- more evenly spread samples
+    # step_size = lanscape_limit / (grid_size-1) # <- more evenly spread samples
     for step in range(grid_size):
-        param_vals.append(step*step_size)
+        param_vals.append(step * step_size)
     # generate landscape
     landscape_shape = []
     # 5, 9 [9][9][9][9][9]
@@ -137,8 +139,10 @@ def generate_loss_landscape(grid_size, dimensions, inputs, U, qnn):
         param_list = np.asarray(param_list)
         qnn.params = torch.tensor(param_list, dtype=torch.float64, requires_grad=True).reshape(qnn.params.shape)
         cost = cost_func(inputs, y_true, qnn, device="cpu")
-        landscape[idx]=cost.item()
+        landscape[idx] = cost.item()
+
     return landscape
+
 
 # gen 2D loss landscape
 def generate_2d_loss_landscape(grid_size, inputs, U, qnn):
@@ -155,13 +159,13 @@ def generate_2d_loss_landscape(grid_size, inputs, U, qnn):
     landscape = []
     lanscape_limit = 2 * math.pi
     step_size = lanscape_limit / grid_size
-    #step_size = lanscape_limit / (grid_size-1) # <- more evenly spread samples
+    # step_size = lanscape_limit / (grid_size-1) # <- more evenly spread samples
     x = inputs
     expected_output = torch.matmul(U, x)
     y_true = expected_output.conj()
     for i in range(grid_size):
         # start at 2pi so y axis label still fits (upwards scaling instead of downards)
-        #arg_1 = lanscape_limit - i * step_size
+        # arg_1 = lanscape_limit - i * step_size
         arg_1 = i * step_size
         row = []
         for j in range(grid_size):
@@ -222,7 +226,7 @@ def generate_3D_loss_landscape_with_labels(grid_size, inputs, U):
     points.append(y_array)
     points.append(z_array)
     return landscape, points
- 
+
 
 def generate_3D_loss_landscape(grid_size, inputs, U):
     """generates a 3D loss landscape using the PennyLane (U3) ansatz
@@ -243,7 +247,7 @@ def generate_3D_loss_landscape(grid_size, inputs, U):
     expected_output = torch.matmul(U, x)
     y_true = expected_output.conj()
     for i in range(grid_size):
-        row_x= []
+        row_x = []
         # start at 2pi so y axis label still fits (upwards scaling instead of downards)
         arg_1 = i * step_size
         for j in range(grid_size):

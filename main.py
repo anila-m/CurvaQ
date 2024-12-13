@@ -7,13 +7,11 @@ from entanglement import *
 from circuit import CircuitDescriptor
 
 import qiskit.qasm3
-from qiskit.circuit import Parameter
+#from qiskit.circuit import Parameter
 from subprocess import Popen, PIPE
 
-
-#from qiskit_aer.noise import NoiseModel as qiskitNoiseModel
 import qiskit_aer.noise as qiskitNoiseModel
-from qiskit import QuantumCircuit
+#from qiskit import QuantumCircuit
 
 from flask import Flask
 from flask_smorest import Api
@@ -23,6 +21,7 @@ import marshmallow as ma
 
 app = Flask(__name__)
 
+#Setup the interface
 app.config.update(
     API_TITLE = "QML Toolbox",
     API_VERSION = "0.1",
@@ -36,18 +35,18 @@ app.config.update(
         "info": {
             "description": "Toolbox for QML developement",
         },
-        #"license": {"name": "Apache v2 License"},
     }
 )
 
 api = Api(app)
 
-
+#Define the starting page
 @app.route("/")
 def heartbeat():
     return '<h1>QML-Toolbox</h1> <h3>View the API Docs <a href="/api/swagger-ui">here</a></h3>'
 
 
+#Request schema for the metrics
 class MetricsRequestSchema(ma.Schema):
     num_qubits = ma.fields.Int()
     num_layers = ma.fields.Int()
@@ -55,19 +54,24 @@ class MetricsRequestSchema(ma.Schema):
     num_data_points = ma.fields.Int()
     grid_size = ma.fields.Int()
 
+#Response schema for the metrics
 class MetricsResponseSchema(ma.Schema):
     total_variation = ma.fields.Float()
     fourier_density = ma.fields.Float()
     inverse_standard_gradient_deviation = ma.fields.List(ma.fields.Float())
     scalar_curvature = ma.fields.String() #Datentyp anpassen
 
-
+#Blueprint for the metrics
 blp_metrics = Blueprint(
     "metrics",
     __name__,
     "calculates the metrics"
 )
+
+#Call for the function evaluating all metrics
+#Setting up the route under which the function can be accessed
 @blp_metrics.route("/metrics", methods=["POST"])
+#Example arguments
 @blp_metrics.arguments(
     MetricsRequestSchema,
     example=dict(
@@ -90,8 +94,10 @@ def calculate_metrics(inputs: dict):
     }
     return outputs
 
-
+#Call for the function computing the total variation
+#Setting up the route under which the function can be accessed
 @blp_metrics.route("/calculate_total_variation", methods=["POST"])
+#Example arguments
 @blp_metrics.arguments(
     MetricsRequestSchema,
     example=dict(
@@ -108,8 +114,10 @@ def calculate_total_variation(inputs: dict):
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"total_variation": calc_total_variation(landscape)}
 
-
+#Call for the function computing the fourier density
+#Setting up the route under which the function can be accessed
 @blp_metrics.route("/fourier_density", methods=["POST"])
+#Example arguments
 @blp_metrics.arguments(
     MetricsRequestSchema,
     example=dict(
@@ -126,8 +134,10 @@ def calculate_fourier_density(inputs: dict):
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"fourier_density": calc_fourier_density(landscape)}
 
-
+#Call for the function computing the inverse standart gradient deviation
+#Setting up the route under which the function can be accessed
 @blp_metrics.route("/inverse_standard_gradient_deviation", methods=["POST"])
+#Example arguments
 @blp_metrics.arguments(
     MetricsRequestSchema,
     example=dict(
@@ -144,8 +154,10 @@ def calculate_inverse_standard_gradient_deviation(inputs: dict):
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"inverse_standard_gradient_deviation": calc_IGSD(landscape).tolist()}
 
-
+#Call for the function computing the scalar curvature
+#Setting up the route under which the function can be accessed
 @blp_metrics.route("/scalar_curvature", methods=["POST"])
+#Example arguments
 @blp_metrics.arguments(
     MetricsRequestSchema,
     example=dict(
@@ -162,25 +174,28 @@ def calculate_scalar_curvature(inputs: dict):
     landscape = get_loss_landscape(inputs["num_qubits"], inputs["num_layers"], inputs["schmidt_rank"], inputs["num_data_points"], inputs["grid_size"])
     return {"scalar_curvature": str(calc_scalar_curvature(landscape).tolist())}
 
-
+#Blueprint for the ansatz characteristics
 blp_characteristics = Blueprint(
     "ansatz_characteristics",
     __name__,
     "calculates the ansatz_characteristics"
 )
 
-
+#Request schema for the entanglement capability tool 
 class EntanglementCapabilityRequestSchema(ma.Schema):
     qasm = ma.fields.String()
     noise = ma.fields.Boolean()
     measure = ma.fields.String()
     shots = ma.fields.Int()
 
-
+#Response schema for the entanglement capability tool
 class EntanglementCapabilityResponseSchema(ma.Schema):
-    entanglement_capability = ma.fields.Float()
+    entanglement_capability = ma.fields.List(ma.fields.Float())
 
+#Call for the function computing the entanglement capability
+#Setting up the route under which the function can be accessed
 @blp_characteristics.route("/entanglement_capability", methods=["POST"])
+#Example arguments
 @blp_characteristics.arguments(
     EntanglementCapabilityRequestSchema,
     example=dict(
@@ -204,20 +219,24 @@ def calculate_entanglement_capability(inputs: dict):
     cricuit = CircuitDescriptor(qcircuit,qcircuit.parameters,None)
 
     entagle_calc = EntanglementCapability(cricuit, noise_model)
+
     return {"entanglement_capability": entagle_calc.entanglement_capability(inputs["measure"], inputs["shots"])}
 
 
-
+#Request schema for the expressibility tool
 class ExpressibilityRequestSchema(ma.Schema):
     num_tries = ma.fields.Int()
     num_bins = ma.fields.Int()
     num_qubits = ma.fields.Int()
 
-
+#Response schema for the expressibility tool
 class ExpressibilityResponseSchema(ma.Schema):
     expressibility = ma.fields.Float()
 
+#Call for the function computing the expressibility 
+#Setting up the route under which the function can be accessed
 @blp_characteristics.route("/expressibility", methods=["POST"])
+#Example arguments
 @blp_characteristics.arguments(
     ExpressibilityRequestSchema,
     example=dict(
@@ -231,13 +250,14 @@ def calculate_expressibility(inputs:dict):
     check_expressibility_inputs(inputs)
     return {"expressibility": expressibility(inputs["num_tries"] , inputs["num_bins"], inputs["num_qubits"])}
 
-
+#Blueprint for the zx-calculus
 blp_zx_calculus = Blueprint(
     "zx-calculus",
     __name__,
     "calculates ZX-Calculus"
 )
 
+#Request schema for the expressibility tool
 class ZXCalculusRequestSchema(ma.Schema):
     ansatz = ma.fields.String()
     num_qubits = ma.fields.Int()
@@ -245,12 +265,14 @@ class ZXCalculusRequestSchema(ma.Schema):
     hamiltonian = ma.fields.String()
     parameter = ma.fields.Int()
 
-
+#Response schema for the expressibility tool
 class ZXCalculusResponseSchema(ma.Schema):
     zx_calculus = ma.fields.String()
 
-
+#Call for the function computing the zxw-calculus 
+#Setting up the route under which the function can be accessed
 @blp_zx_calculus.route("/zx-calculus", methods=["POST"])
+#Example arguments
 @blp_zx_calculus.arguments(
     ZXCalculusRequestSchema,
     example=dict(
@@ -388,12 +410,4 @@ api.register_blueprint(blp_zx_calculus)
 
 
 if __name__ == "__main__":
-    # test_qnn_generation()
-    # test_input_generation()
-    # test_loss_landscape_calculation()
-    # test_api()
-    # zx_calculus(ansatz='sim1', qubits=2, layers=1, hamiltonian='ZZ', parameter=0)
-
-    # print("Starting Server")
-
     app.run(host="0.0.0.0", port=8000)

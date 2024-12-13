@@ -7,11 +7,9 @@ from entanglement import *
 from circuit import CircuitDescriptor
 
 import qiskit.qasm3
-#from qiskit.circuit import Parameter
 from subprocess import Popen, PIPE
 
 import qiskit_aer.noise as qiskitNoiseModel
-#from qiskit import QuantumCircuit
 
 from flask import Flask
 from flask_smorest import Api
@@ -59,7 +57,7 @@ class MetricsResponseSchema(ma.Schema):
     total_variation = ma.fields.Float()
     fourier_density = ma.fields.Float()
     inverse_standard_gradient_deviation = ma.fields.List(ma.fields.Float())
-    scalar_curvature = ma.fields.String() #Datentyp anpassen
+    scalar_curvature = ma.fields.String()
 
 #Blueprint for the metrics
 blp_metrics = Blueprint(
@@ -96,7 +94,7 @@ def calculate_metrics(inputs: dict):
 
 #Call for the function computing the total variation
 #Setting up the route under which the function can be accessed
-@blp_metrics.route("/calculate_total_variation", methods=["POST"])
+@blp_metrics.route("/total_variation", methods=["POST"])
 #Example arguments
 @blp_metrics.arguments(
     MetricsRequestSchema,

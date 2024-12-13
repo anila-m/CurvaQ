@@ -47,17 +47,10 @@ To forward port 8000 of the container to port 8000 of your host computer, run:
 docker run -p 8000:8000 qmltoolbox
 ```
 
-The OpenAPI documentation can be accessed at ``http://localhost:8000/docs``
+The OpenAPI documentation can be accessed at ``http://localhost:8000/api/swagger-ui``
 
 ## ZX-calculus
-### Building
 
-* Install Rust from https://www.rust-lang.org/tools/install
-* Build the tool using `cargo build --release`
-
-### Usage
-
-The binary will be availabe at `target/release/bpdetect` and accepts the following arguments: `bpdetect circuitName numQubits numLayers pauliString parameterIdx`:
 
 * `circuitName` must be one of: `introExample`, `iqpExample`, `sim1`, `sim2`, `sim9`, `sim10`, `sim11`, `sim12`, `sim15`, `iqp1`, `iqp2`, `iqp3`. Here, `introExample` and `iqpExample` are the example circuits we discuss in Sections 5.4.1 and 5.5.4 respectively.
 
@@ -65,12 +58,6 @@ The binary will be availabe at `target/release/bpdetect` and accepts the followi
 
 * `parameterIdx` is the parameter with regards to which the derivative is analysed. Counting starts at 0.
 
-Alternatively, use the method `zx_calculus` in `main.py` and specify the desired parameters. For example:
-```py
-if __name__ == '__main__':
-    zx_calculus(ansatz='sim1', qubits=2, layers=1, hamiltonian='ZZ', parameter=0)
-```
-In both cases, don't forget to build the tool first using `cargo build --release`.
 
 ## Disclaimer of Warranty
 Unless required by applicable law or agreed to in writing, 

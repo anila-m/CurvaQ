@@ -1,6 +1,7 @@
 import torch
 import orqviz
 import numpy as np
+import scipy as sp
 from classic_training import cost_func
 #from data import *
 #import numpy as np
@@ -9,6 +10,59 @@ from utils import *
 from landscapes import *
 #from victor_thesis_plots import *
 
+# total absolute scalar curvature
+def calc_total_absolute_scalar_curvature(landscape, r, c):
+    '''
+    Calculates the total absolute scalar curvature of a loss landscape within a hypersphere of radius r around a center c.
+
+    Args:
+        landscape (array): n dimensional loss landscape array
+        r (float): radius of hypersphere, same in every dimension
+        c (array): point within loss landscape, center of hypersphere, array with n entries (one for each dimension)
+
+    Returns:
+        float: total absolute scalar curvature
+    '''
+    dimensions = len(np.array(landscape).shape)
+    # get loss values of samples within hypersphere
+    loss_values = get_loss_values_within_hypersphere(landscape,r,c)
+    # get number of samples used to calculate total absolute sc
+    N = len(loss_values)
+    # get volume of hypersphere
+    hypersphere_volume = get_hypersphere_volume(dimensions, r)
+    # compute total absolute sc
+    total_absolute_sc = np.sum(np.absolute(loss_values))    
+    total_absolute_sc = total_absolute_sc * hypersphere_volume/N
+    return np.round(total_absolute_sc, 3)
+
+def get_loss_values_within_hypersphere(landscape,r,c):
+    '''
+    Determines all loss values of all N sampled points within the hypersphere of radius r around center c.
+
+    Args:
+        landscape (array): n dimensional loss landscape array
+        r (float): radius of hypersphere, same in every dimension
+        c (array): point within loss landscape, center of hypersphere, array with n entries (one for each dimension)
+
+    Returns:
+        array: N dimensional array of loss values
+    '''
+    loss_values = np.array()
+    return loss_values
+
+def get_hypersphere_volume(n, r):
+    '''
+    Computes volume of a n-dimensional hypersphere (n-ball) with radius r.
+
+    Args:
+        n (int): number of dimensions
+        r (float): radius of hypersphere
+    
+    Returns:
+        scalar: 
+    '''
+    volume = (r**n)*((np.pi**(n/2))/sp.special.gamma(n/2+1))
+    return volume
 
 # n-dimensional scalar curvature
 def calc_scalar_curvature(landscape):

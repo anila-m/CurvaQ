@@ -8,61 +8,93 @@ from classic_training import cost_func
 #from utils import *
 from utils import *
 from landscapes import *
+from BA_curvature_util import *
 #from victor_thesis_plots import *
 
+#sampling_methods = {"uniform": sample_n_ball_uniform, "uniform_Voelker": sample_n_ball_uniform_Voelker_method}
+
 # total absolute scalar curvature
-def calc_total_absolute_scalar_curvature(landscape, r, c):
+# Alina
+def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1000, absolute=True):
     '''
-    Calculates the total absolute scalar curvature of a loss landscape within a hypersphere of radius r around a center c.
+    Calculates the total absolute scalar curvature of a function within a hypersphere of 
+    radius r around a center point c.
 
     Args:
-        landscape (array): n dimensional loss landscape array
+        function (array): function 
         r (float): radius of hypersphere, same in every dimension
         c (array): point within loss landscape, center of hypersphere, array with n entries (one for each dimension)
+        sampling (String): sampling method, possible values: 
+            "uniform" (uniformly random, Marsaglia method) (default), # TODO: andere Bezeichner?
+            "uniform_voelker" (uniformly random, Voelker method)
+            #TODO: welche sampling Methoden ausprobieren?
+        N (int): number of sample points, default: 1000 #TODO: andere Zahl?
 
     Returns:
         float: total absolute scalar curvature
     '''
-    dimensions = len(np.array(landscape).shape)
-    # get loss values of samples within hypersphere
-    loss_values = get_loss_values_within_hypersphere(landscape,r,c)
-    # get number of samples used to calculate total absolute sc
-    N = len(loss_values)
+    dimensions = len(c)
+    # get sample points within hypersphere
+    sample_points = sample_n_ball_uniform(dimensions, r, c, N) #TODO: wenn andere sampling Methoden implementiert wurden erweitern
+    scalar_curvature_landscape = calc_scalar_curvature_for_function(function, sample_points)
     # get volume of hypersphere
     hypersphere_volume = get_hypersphere_volume(dimensions, r)
     # compute total absolute sc
-    total_absolute_sc = np.sum(np.absolute(loss_values))    
+    total_absolute_sc = np.sum(np.absolute(scalar_curvature_landscape))
+    if not absolute: #if total scalar curvature is to be calculated, not absolute sc
+        total_absolute_sc = np.sum(scalar_curvature_landscape)
     total_absolute_sc = total_absolute_sc * hypersphere_volume/N
     return np.round(total_absolute_sc, 3)
 
-def get_loss_values_within_hypersphere(landscape,r,c):
-    '''
-    Determines all loss values of all N sampled points within the hypersphere of radius r around center c.
+
+# n-dimensional scalar curvature, for an objective function and a list of points, not "just" a landscape
+# Alina
+def calc_scalar_curvature_for_function(function, sample_points):
+    """calculates the scalar curvature of a function at different points
+    instead of calculating the whole n dimensional curvature array (same size as the input landscape)
+    this function calculates the scalar curvature at each entry of the n dimensional landscape 
+    and puts them back together into an output array
 
     Args:
-        landscape (array): n dimensional loss landscape array
-        r (float): radius of hypersphere, same in every dimension
-        c (array): point within loss landscape, center of hypersphere, array with n entries (one for each dimension)
+        function (callable): callable function, which 
+        sample_points (array): n dimensional sample_points array
 
     Returns:
-        array: N dimensional array of loss values
-    '''
-    loss_values = np.array()
-    return loss_values
+        array: n dimensional scalar curvature array
+    """
+    sample_points = np.asarray(sample_points)
+    scalar_curvature = np.ndarray(shape=sample_points.shape)
+    #dims = sample_points.shape[1] #nicht nötig?
 
-def get_hypersphere_volume(n, r):
-    '''
-    Computes volume of a n-dimensional hypersphere (n-ball) with radius r.
-
-    Args:
-        n (int): number of dimensions
-        r (float): radius of hypersphere
-    
-    Returns:
-        scalar: 
-    '''
-    volume = (r**n)*((np.pi**(n/2))/sp.special.gamma(n/2+1))
-    return volume
+    # iterate over all sample points 
+    for idx in range(sample_points.shape[0]):
+        # approximate dimsXdims sized hessian and dims sized vector of gradients for a specific point of the loss landscape
+        # ------ ab hier anders --------
+        print("jacobian")
+        #gradient_vector = sp.differentiate.jacobian(function,sample_points[idx,:]).df # oder: approx_fprime
+        gradient_vector = sp.optimize.approx_fprime(sample_points[idx], function)
+        print("hessian")
+        #point_hessian = sp.differentiate.hessian(function, sample_points[idx,:]).ddf
+        point_hessian = sp.optimize.approx_hess(sample_points[idx], function)
+        # ------ bis hier anders -------
+        # calculate scalar curvature from here
+        beta = 1 / (1 + np.linalg.norm(gradient_vector) ** 2)
+        left_term = beta * (
+            np.trace(point_hessian) ** 2
+            - np.trace(np.matmul(point_hessian, point_hessian))
+        )
+        right_inner = np.matmul(point_hessian, point_hessian) - np.trace(
+            point_hessian
+        ) * point_hessian
+        # order of matmul with gradient does not matter
+        right_term = (
+            2
+            * (beta**2)
+            * (np.matmul(np.matmul(gradient_vector.T, right_inner), gradient_vector))
+        )
+        point_curv = left_term + right_term
+        scalar_curvature[idx,:] = point_curv
+    return scalar_curvature
 
 # n-dimensional scalar curvature
 def calc_scalar_curvature(landscape):

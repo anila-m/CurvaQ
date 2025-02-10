@@ -310,6 +310,7 @@ def get_loss_landscape(num_qubits, num_layers, schmidt_rank, num_data_points, gr
     inputs = generate_data_points(type_of_data=1, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
     dimensions = num_qubits * num_layers * 3
     loss_landscape = generate_loss_landscape(grid_size=grid_size, dimensions=dimensions, inputs=inputs, U=unitary, qnn=qnn)
+    print(dimensions, loss_landscape.shape)
     return loss_landscape
 
 

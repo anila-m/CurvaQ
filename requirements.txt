@@ -3,7 +3,7 @@ networkx==2.8.8 #3.1
 numpy==1.24.1 #1.26.4
 orqviz==0.5.0 #0.6.0
 PennyLane==0.27.0 #same
-scipy==1.13.1  #1.11.4
+scipy==1.13.1  #1.11.4 # 1.15.1
 torch==2.2.0 #2.3.1
 
 cirq==0.13.1  #same, neuere Version funktioniert nicht

@@ -36,6 +36,15 @@ def test_uniform_sampling():
 
     return 0
 
+def g(x):
+    return 1
+def vectorize(f):
+    vf = np.vectorize(f)
+
+    def newfunc(*args, **kwargs):
+        return vf(*args, **kwargs)[()]
+    return newfunc
+
 def f(x):
     return np.sum(x, axis=1)
 def h(x):
@@ -93,10 +102,15 @@ def test_tasc():
 
 if __name__ == "__main__":
     r = 1
-    c = np.array([0,0])
+    c = np.array([1,1,1])
     #test_uniform_sampling()
     #print(plot_f())
     #print(calc_total_absolute_scalar_curvature(f,r,c,N=1000))
-    test_uniform_sampling_costFunc()
+    #test_uniform_sampling_costFunc()
+    g_vec = vectorize(g)
+    results = []
+    for _ in range(20):
+        results.append(calc_total_absolute_scalar_curvature(rosen, r, c, N=1000))
+    print(results)
 
 

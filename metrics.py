@@ -63,19 +63,20 @@ def calc_scalar_curvature_for_function(function, sample_points):
         array: n dimensional scalar curvature array
     """
     sample_points = np.asarray(sample_points)
-    scalar_curvature = np.ndarray(shape=sample_points.shape)
+    scalar_curvature = np.ndarray(sample_points.shape[0])
     #dims = sample_points.shape[1] #nicht nötig?
 
     # iterate over all sample points 
     for idx in range(sample_points.shape[0]):
         # approximate dimsXdims sized hessian and dims sized vector of gradients for a specific point of the loss landscape
         # ------ ab hier anders --------
-        print("jacobian")
-        #gradient_vector = sp.differentiate.jacobian(function,sample_points[idx,:]).df # oder: approx_fprime
-        gradient_vector = sp.optimize.approx_fprime(sample_points[idx], function)
-        print("hessian")
-        #point_hessian = sp.differentiate.hessian(function, sample_points[idx,:]).ddf
-        point_hessian = sp.optimize.approx_hess(sample_points[idx], function)
+        #print("jacobian")
+        gradient_vector = sp.differentiate.jacobian(function,sample_points[idx,:]).df #funktioniert (noch) nicht mit Kostenfunktion
+        #gradient_vector = sp.optimize.approx_fprime(sample_points[idx], function) # funktioniert mit Kostenfunktion
+        #gradient_vector = autograd
+        #print("hessian")
+        point_hessian = sp.differentiate.hessian(function, sample_points[idx,:]).ddf
+        #point_hessian = sp.optimize.approx_hess(sample_points[idx], function)
         # ------ bis hier anders -------
         # calculate scalar curvature from here
         beta = 1 / (1 + np.linalg.norm(gradient_vector) ** 2)
@@ -93,7 +94,8 @@ def calc_scalar_curvature_for_function(function, sample_points):
             * (np.matmul(np.matmul(gradient_vector.T, right_inner), gradient_vector))
         )
         point_curv = left_term + right_term
-        scalar_curvature[idx,:] = point_curv
+        #scalar_curvature.append(point_curv)
+        scalar_curvature[idx] = point_curv
     return scalar_curvature
 
 # n-dimensional scalar curvature

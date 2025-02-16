@@ -5,6 +5,34 @@ from metrics import *
 
 rng = np.random.default_rng()
 
+# caluclating hessian of a function f at point x
+# adapted from github gist: https://gist.github.com/jgomezdans/510476ab420a63f61da9
+def calc_hessian (func,x,epsilon=1e-8):
+    """
+    Calculate the Hessian of a function func at the point x using finite differences.
+    
+    Args:
+        func (callable): function, takes input of length dim, where dim = len(x)
+        x (array): input for func
+        epsilon (float): epsilon used for finite differences, default: 1e-8
+
+    Returns:
+        hessian (array): hessian of func at point f, array of size dim x dim where dim = len(x)
+    """
+    # Approximate the Jacobian of func at x using finite differences:
+    grad = sp.optimize.approx_fprime (x,func,epsilon)
+    dim = len(x)
+    hessian = np.zeros ((dim,dim)) # allocate space for hessian
+    x_copy = 1.*x # copy of x, turn into array of float
+    for i in range(dim):
+        xi = x_copy[i] 
+        # approximate Jacobian of func at x+epsilon*(0,...,0,1,0,...0) (1 is at position i)
+        x_copy[i] = xi + epsilon
+        grad_temp = sp.optimize.approx_fprime (x_copy,func,epsilon) 
+        hessian[i,:] = (grad_temp - grad)/epsilon
+        x_copy[i] = xi #restoring initial value of x
+    return hessian
+
 # Volume of n dimensional hypersphere
 # Alina
 def get_hypersphere_volume(n, r):

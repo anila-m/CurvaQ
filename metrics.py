@@ -44,7 +44,7 @@ def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1
     if not absolute: #if total scalar curvature is to be calculated, not absolute sc
         total_absolute_sc = np.sum(scalar_curvature_landscape)
     total_absolute_sc = total_absolute_sc * hypersphere_volume/N
-    return np.round(total_absolute_sc, 3)
+    return np.round(total_absolute_sc, 3), scalar_curvature_landscape, sample_points
 
 
 # n-dimensional scalar curvature, for an objective function and a list of points, not "just" a landscape
@@ -71,11 +71,14 @@ def calc_scalar_curvature_for_function(function, sample_points):
         # approximate dimsXdims sized hessian and dims sized vector of gradients for a specific point of the loss landscape
         # ------ ab hier anders --------
         #print("jacobian")
-        gradient_vector = sp.differentiate.jacobian(function,sample_points[idx,:]).df #funktioniert (noch) nicht mit Kostenfunktion
-        #gradient_vector = sp.optimize.approx_fprime(sample_points[idx], function) # funktioniert mit Kostenfunktion
+        #print("value", function(sample_points[idx,:]))
+        #gradient_vector = sp.differentiate.jacobian(function,sample_points[idx,:]).df #funktioniert (noch) nicht mit Kostenfunktion
+        gradient_vector = sp.optimize.approx_fprime(sample_points[idx], function) # funktioniert mit Kostenfunktion
         #gradient_vector = autograd
         #print("hessian")
-        point_hessian = sp.differentiate.hessian(function, sample_points[idx,:]).ddf
+        #point_hessian = sp.differentiate.hessian(function, sample_points[idx,:]).ddf
+        point_hessian = calc_hessian(function, sample_points[idx,:])
+        #print("hessian", point_hessian)
         #point_hessian = sp.optimize.approx_hess(sample_points[idx], function)
         # ------ bis hier anders -------
         # calculate scalar curvature from here
@@ -94,7 +97,6 @@ def calc_scalar_curvature_for_function(function, sample_points):
             * (np.matmul(np.matmul(gradient_vector.T, right_inner), gradient_vector))
         )
         point_curv = left_term + right_term
-        #scalar_curvature.append(point_curv)
         scalar_curvature[idx] = point_curv
     return scalar_curvature
 

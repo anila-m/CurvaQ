@@ -7,3 +7,7 @@ __pycache__
 qnns/__pycache__
 
 zx-calculus/target
+
+myenv/
+
+.DS_store

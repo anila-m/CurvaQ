@@ -150,7 +150,7 @@ def testing_rosenbrock_3D(dim=3,r=1,runs=1000,N=1000):
     results["summary"] = summary
     # write results to json file
     directory = "results/preliminary_tests"
-    os.makedirs(directory, exist_ok=True)
+    
     file = open(f"{directory}/rosenbrock{dim}D_projection_N={N}_{date}.json", mode="w")
     json.dump(results, file, indent=4)
 
@@ -158,14 +158,14 @@ def plot_rosenbrock():
     '''
         plotting rosen([x,y,1]) (3D) in [0,2]x[0,2]
     '''
-    x = np.linspace(1.001,0.999,50)
+    x = np.linspace(0,2,100)
     X, Y = np.meshgrid(x,x)
     ax = plt.subplot(111, projection='3d')
     Z = np.ones_like(X)
     ax.plot_surface(X, Y, rosen([X, Y, Z]))
     ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel='Rosenbrock($x_1$,$x_2$,1)')
     plt.title("Rosenbrock function for $x_3=1$")
-    plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_2ndView.png")
+    plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_4thView.png")
 
 def get_max_N_values(list, N):
     idx = []
@@ -264,24 +264,21 @@ def test_rosenbrock_derivatives():
     print("hessian: ", hess)
     print("SC: ", calc_SC(grad,hess))
 
+
+
 def plot_rosenbrock_SC():
     grid_size = 100 # in total 100x100 points on regular grid
-    x = np.linspace(0,2,grid_size)
+    x = np.linspace(0.99,1.01,grid_size)
     X,Y = np.meshgrid(x,x)
     points = np.ndarray((grid_size**2,2))
     points[:,0] = X.flatten()
     points[:,1] = Y.flatten()
-    sc_values = np.ndarray(X.shape)
-    for idx, _ in np.ndenumerate(sc_values):
-        point = np.asarray([X[idx], Y[idx],1])
-        grad = rosen_der(point)
-        hess = rosen_hess(point)
-        sc_values[idx] = calc_SC(grad, hess)
+    sc_values = calc_scalar_curvature_for_function(rosen_projection_to_2d,points)
     ax = plt.subplot(111, projection='3d')
-    ax.plot_surface(X, Y, sc_values, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+    ax.plot_surface(X, Y, sc_values.reshape(X.shape), rstride=1, cstride=1, cmap=cm.viridis, linewidth=0.1)
     ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel='SC')
     plt.title("Scalar Curvature for Rosenbrock function for $x_3=1$")
-    plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_SC_grid_cmap2.png", dpi=500)
+    plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_SC_grid_abitsmaller.png", dpi=500)
 
 
 

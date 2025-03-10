@@ -1,6 +1,6 @@
-# Toolbox: Total Absolute Variation
-This toolbox was implemented by X, Y, Z during a student research project in 2024. It provides tools to analyze loss landscapes by combining metrics, ansatz characteristics and ZX-calculus.
-I have added the metric total absolute variation. 
+# Toolbox: Total Absolute Scalar Curvature
+This toolbox was implemented during a student research project in 2024. It provides tools to analyze loss landscapes by combining metrics, ansatz characteristics and ZX-calculus.
+This fork of the original toolbox also contains the metric total absolute scalar curvature. 
 
 ## Dependencies
 The code contained in this repository requires the following dependencies:

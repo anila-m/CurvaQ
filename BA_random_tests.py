@@ -52,7 +52,7 @@ def calc_landscape_tasc(grid_point_array, r=0):
 def cosine_2D(x):
     if len(x) != 2:
         raise Exception
-    Z = (1/1) * (cos(1 * x[0]) + cos(1 * x[1]))
+    Z = (1/2) * (cos(2 * x[0]) + cos(2 * x[1]))
     return Z
 
 def cosine_2D_tasc():
@@ -72,8 +72,8 @@ def cosine_2D_tasc():
     print("tsc", np.mean(tscs))
     print("masc", np.mean(mascs))
     print("msc", np.mean(mscs))
-    filepath = "plots/preliminary_tests/cosine_2D_v3.png"
-    x = np.linspace(0,stepsize,100)
+    filepath = "plots/preliminary_tests/cosine_2D_v2.png"
+    x = np.linspace(-stepsize,stepsize,500)
     X,Y = np.meshgrid(x,x)
     ax = plt.subplot(111, projection='3d')
     values = []
@@ -83,7 +83,7 @@ def cosine_2D_tasc():
     values = np.reshape(np.asarray(values), X.shape)
     ax.plot_surface(Y, X, values, rstride=1, cstride=1, cmap=cm.viridis, linewidth=0.1) #switch Y and X, since that's how our TASC value landscapes are computed
     ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel="$f(x_1,x_2)$")
-    plt.title("$f(x_1,x_2) = (cos(x_1)+cos(x_2))$")
+    plt.title("$f(x_1,x_2) = 1/2(cos(2x_1)+cos(2x_2))$")
     plt.savefig(filepath, dpi=500)
     plt.close()
 

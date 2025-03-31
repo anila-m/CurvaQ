@@ -275,7 +275,10 @@ def cost_func_grid_TASC():
     c = np.array([0,0,0])
     N=6
     points = generate_grid_point_array(1,c,N)
-
+    num_qubits = 1
+    num_layers = 1
+    num_data_points = 1
+    schmidt_rank = 1
     cost_function = get_basic_3D_cost_function()
     # compute TASC, TSC, Mean SC and Mean ASC values
     date = datetime.today().strftime('%Y-%m-%d')

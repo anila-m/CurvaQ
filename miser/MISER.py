@@ -44,6 +44,7 @@ class MISER:
         mean = sum(a) / n
         return mean, sum(a2) / n - mean**2
 
+
     def MISER(self, func, low, high, N, dith):
         """Implementation of the MISER algorithm of Press and Farrar. Monte Carlo samples the function func in the
         n-dimensional rectangular volume region using recursive stratified sampling.
@@ -62,7 +63,7 @@ class MISER:
         PFAC = 0.1 # fraction of evaluations to use for exploring the variance
         BIG = 1e30
         n = len(low)
-        V = high[0] - low[0]
+        V = high[0] - low[0] # volume of hypercube
         for i in range(1, n):
             V *= high[i] - low[i]
         N_pre = max(MNPT, int(N*PFAC))
@@ -77,14 +78,19 @@ class MISER:
                 fvals[i] = func(pt)
             avg, var = self.mean_variance(fvals)
             # print('avg = {:.4g}'.format(avg))
-            return avg, var/N, N
+            #return avg, var/N, N # old result
+            return avg*V, var/N, N # new result, multiplication with volume V (to estimate integral and not average function value)
         else: # perform preliminary sampling
             mid = np.zeros(n)
+            vol_left = np.zeros(n) # volumes of potential new hypercubes
+            vol_right = np.zeros(n)
             # initialize the midpoints for each dimension
             for j in range(n):
                 # if dith != 0, select midpoint s randomly
                 s = np.sign(self.ran.rand(-1, 1)) * dith
                 mid[j] = (0.5 + s)*low[j] + (0.5 - s)*high[j]
+                vol_left[j] = V*(mid[j]-low[j])/(high[j]-low[j])
+                vol_right[j] = V*(high[j]-mid[j])/(high[j]-low[j])
             left_fvals = []
             right_fvals = []
             for i in range(n):
@@ -96,9 +102,9 @@ class MISER:
                 # for each dimension, accumulate sums for the subregion pt fell into
                 for j in range(n):
                     if pt[j] <= mid[j]: # point is in left subregion
-                        left_fvals[j].append(fval)
+                        left_fvals[j].append(fval*vol_left[j])
                     else: # point is in right subregion
-                        right_fvals[j].append(fval)
+                        right_fvals[j].append(fval*vol_right[j])
             # choose which dimension jb to bisect
             sumb = BIG
             jb = -1
@@ -148,7 +154,8 @@ class MISER:
             # recursion in right subregion
             ave_right, var_right, Nr = self.MISER(func, low_tmp, high_tmp, N_right, dith)
             # combine regions
-            ave = frac_left*ave_left + frac_right*ave_right
+            #ave = frac_left*ave_left + frac_right*ave_right
+            ave = ave_left + ave_right
             var = var_left*frac_left**2 + var_right*frac_right**2
             return ave, var, Nl + Nr
 

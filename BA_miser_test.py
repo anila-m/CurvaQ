@@ -1,8 +1,12 @@
+import time
 import numpy as np
 import scipy as sp
 from miser.MISER import *
 from miser.SimpleMonteCarlo import *
 from miser.test_functions import *
+from BA_testing import rosen_projection_to_2d
+from metrics import calc_scalar_curvature_for_function
+from BA_grid_TASC import get_basic_3D_cost_function
 
 def test_miser():
     '''
@@ -118,5 +122,76 @@ def test_miser():
         serror.append(var)
         srel.append(abs(actual-ave)/abs(actual))
 
+def integrate_cube_MC(func, lowerleft, upperright, N=1000):
+    '''
+        Assumption: cube and not rectangular box, i.e. side lengths are the same for every dimension
+    '''
+    start = time.time()
+    dim = len(lowerleft)
+    if dim != len(upperright):
+        raise Exception("wrong dimensions")
+    volume = 1
+    for i in range(dim):
+        side = upperright[i]-lowerleft[i]
+        volume *= side
+    sample_points = []
+    rng = np.random.default_rng()
+    sample_points = rng.uniform(low = lowerleft, high = upperright, size = (N, dim))
+    fun_values = []
+    for point in sample_points:
+        fun_values.append(func(point))
+    result = np.mean(fun_values)*volume
+    elapsed_time = time.time()-start
+    return result, np.round(elapsed_time, 3)
+
+def integrate_cube_MISER(func, lowerleft, upperright, N=1000):
+    start = time.time()
+    miser_instance = MISER()
+    dim = len(lowerleft)
+    volume = 1
+    for i in range(dim):
+        side = upperright[i]-lowerleft[i]
+        volume *= side
+    ave, var, N = miser_instance.MISER(func,lowerleft, upperright, N=N, dith=0)
+    #miser_result = ave*volume
+    elapsed_time = time.time()-start
+    return ave, N, np.round(elapsed_time, 3)
+
+def get_ASC_function(func):
+    def absolute_scalar_curvature(x):
+        points = [x.tolist()]
+        result = calc_scalar_curvature_for_function(rosen_projection_to_2d, points)
+        return np.absolute(result[0])
+    return absolute_scalar_curvature
+
+def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000):
+    '''
+        Comparison of TASC of function func within a hypercube when intergral is computed with regular Monte Carlo
+        or MISER. Hypercube is given by a lower left corner and upper right corner.
+    '''
+    absolute_SC = get_ASC_function(func)
+    mc_results = []
+    times_mc = []
+    miser_results = []
+    times_miser = []
+    Ns_miser = []
+    for _ in range(100):
+        mc_result, time_mc = integrate_cube_MC(absolute_SC, lowerleft, upperright, N=N)
+        miser_result, N_miser, time_miser = integrate_cube_MISER(absolute_SC, lowerleft, upperright, N=N)
+        mc_results.append(mc_result)
+        times_mc.append(time_mc)
+        miser_results.append(miser_result)
+        times_miser.append(time_miser)
+        Ns_miser.append(N_miser)
+    print(f"Total absolute SC of function {func}.")
+    print(f"Integrated within hypercupe with lowerleft={lowerleft}, upperright={upperright}")
+    print(f"Median results over 100 repetitions")
+    print(f"regular MC: TASC = {np.median(mc_results)}, N={N}, time (s)= {np.median(times_mc)}")
+    print(f"MISER: TASC={np.median(miser_results)}, N={np.median(Ns_miser)}, time (s)= {np.median(times_miser)}")
+
+
 if __name__=="__main__":
-    test_miser()
+    Ns = [100,500,1000]
+    func = get_basic_3D_cost_function()
+    for N in Ns:
+        compare_Miser_with_MC_TASC(func, [0,0,0], [2,2,2], N=N)

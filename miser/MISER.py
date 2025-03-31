@@ -24,10 +24,16 @@ class MISER:
         :param high: array-like - the "upper right" coordinates
         :return: np.array - the n-dimensional random point
         """
+        '''
         n = len(low)
         pt = np.zeros(n)
         for i in range(n):
             pt[i] = self.ran.rand(low=low[i], high=high[i])
+        return pt'
+        '''
+        n = len(low)
+        rng = np.random.default_rng()
+        pt = rng.uniform(low, high, size=n)
         return pt
 
     def mean_variance(self, a):

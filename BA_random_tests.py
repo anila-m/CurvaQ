@@ -49,9 +49,9 @@ def calc_landscape_tasc(grid_point_array, r=0):
         print("idx", idx, "j", j, "point", point)
 
 if __name__=="__main__":
-    #points = np.asarray([[0,1,2], [0,1,2]])
-    points = np.asarray([[0,1,2], [0,1,2], [0,1,2]])
-    calc_landscape_tasc(points)
-    X,Y = np.meshgrid(points[0], points[1])
-    print(X)
-    print(Y)
+    low = [1,2,1]
+    high = [4,4,4]
+    n = len(low)
+    rng = np.random.default_rng()
+    s = rng.uniform(low, high, size=n)
+    print(s)

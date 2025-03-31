@@ -7,6 +7,7 @@ from miser.test_functions import *
 from BA_testing import rosen_projection_to_2d
 from metrics import calc_scalar_curvature_for_function
 from BA_grid_TASC import get_basic_3D_cost_function
+from scipy.optimize import rosen
 
 def test_miser():
     '''
@@ -188,10 +189,32 @@ def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000):
     print(f"Median results over 100 repetitions")
     print(f"regular MC: TASC = {np.median(mc_results)}, N={N}, time (s)= {np.median(times_mc)}")
     print(f"MISER: TASC={np.median(miser_results)}, N={np.median(Ns_miser)}, time (s)= {np.median(times_miser)}")
+    # Creating a boxplot for both datasets
+    plt.boxplot([miser_results, mc_results], labels=['MISER', 'regular MC'], showfliers=False)
+
+    # Adding a title and labels
+    plt.title('2D Rosenbrock TASC values within hypercube ([0,0] - [2,2]).\n 100 computations.')
+    plt.ylabel('TASC values')
+
+    # Display the plot
+    file_name = "2Drosen_MISER_comparison_noFliers"
+    plt.savefig(f"plots/preliminary_tests/MISER/{file_name}.png", dpi=500)
+    plt.close()
+    # Creating a boxplot for both datasets
+    plt.boxplot([miser_results, mc_results], labels=['MISER', 'regular MC'])
+
+    # Adding a title and labels
+    plt.title('2D Rosenbrock TASC values within hypercube ([0,0] - [2,2]).\n 100 computations.')
+    plt.ylabel('TASC values')
+
+    # Display the plot
+    file_name = "2Drosen_MISER_comparison"
+    plt.savefig(f"plots/preliminary_tests/MISER/{file_name}.png", dpi=500)
+    plt.close()
+
 
 
 if __name__=="__main__":
-    Ns = [100,500,1000]
-    func = get_basic_3D_cost_function()
+    Ns = [1000]
     for N in Ns:
-        compare_Miser_with_MC_TASC(func, [0,0,0], [2,2,2], N=N)
+        compare_Miser_with_MC_TASC(rosen_projection_to_2d, [0,0], [2,2], N=N)

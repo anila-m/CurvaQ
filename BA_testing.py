@@ -356,6 +356,10 @@ if __name__ == "__main__":
     #print(calc_total_absolute_scalar_curvature(rosen,r,c,N=1000))
     #testing_rosenbrock_3D(dim=2)
     #test_rosenbrock_derivatives()
-    maximums = analyse_rosenbrock_gradient()
-    print(maximums)
+    point = np.asarray([1.0,1.0])
+    grad = sp.optimize.approx_fprime(point, rosen_projection_to_2d)
+    hess = calc_hessian(rosen_projection_to_2d, point)
+    print("Point", point)
+    print("Gradient norm", np.linalg.norm(grad))
+    print("Hessian norm", np.linalg.norm(hess))
 

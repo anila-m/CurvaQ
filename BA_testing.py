@@ -280,8 +280,6 @@ def plot_rosenbrock_SC():
     plt.title("Scalar Curvature for Rosenbrock function for $x_3=1$")
     plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_SC_grid_abitsmaller.png", dpi=500)
 
-
-
 if __name__ == "__main__":
     r = 1
     c = np.array([1,2,1])

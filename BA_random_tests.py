@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from metrics import *
 
 def plot_2D_surface(points, values):
     '''
@@ -48,10 +49,47 @@ def calc_landscape_tasc(grid_point_array, r=0):
         landscape[idx] = j
         print("idx", idx, "j", j, "point", point)
 
+def cosine_2D(x):
+    if len(x) != 2:
+        raise Exception
+    Z = (1/1) * (cos(1 * x[0]) + cos(1 * x[1]))
+    return Z
+
+def cosine_2D_tasc():
+    stepsize = np.pi*2
+    c = np.asarray([0,0])
+    tascs = []
+    tscs = []
+    mascs = []
+    mscs = []
+    for _ in range(100):
+        tasc, tsc, masc, msc = calc_several_scalar_curvature_values(cosine_2D, stepsize, c)
+        tascs.append(tasc)
+        tscs.append(tsc)
+        mascs.append(masc)
+        mscs.append(msc)
+    print("tasc", np.mean(tascs))
+    print("tsc", np.mean(tscs))
+    print("masc", np.mean(mascs))
+    print("msc", np.mean(mscs))
+    filepath = "plots/preliminary_tests/cosine_2D_v3.png"
+    x = np.linspace(0,stepsize,100)
+    X,Y = np.meshgrid(x,x)
+    ax = plt.subplot(111, projection='3d')
+    values = []
+    for x1 in x:
+        for x2 in x:
+            values.append(cosine_2D([x1,x2]))
+    values = np.reshape(np.asarray(values), X.shape)
+    ax.plot_surface(Y, X, values, rstride=1, cstride=1, cmap=cm.viridis, linewidth=0.1) #switch Y and X, since that's how our TASC value landscapes are computed
+    ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel="$f(x_1,x_2)$")
+    plt.title("$f(x_1,x_2) = (cos(x_1)+cos(x_2))$")
+    plt.savefig(filepath, dpi=500)
+    plt.close()
+
+def analyze_gradients_high_tasc():
+    points = []
+
+
 if __name__=="__main__":
-    #points = np.asarray([[0,1,2], [0,1,2]])
-    points = np.asarray([[0,1,2], [0,1,2], [0,1,2]])
-    calc_landscape_tasc(points)
-    X,Y = np.meshgrid(points[0], points[1])
-    print(X)
-    print(Y)
+    cosine_2D_tasc()

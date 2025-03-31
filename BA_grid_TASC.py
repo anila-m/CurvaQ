@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import os
+import sys
 import time
 import numpy as np
 import pandas as pd
@@ -67,6 +68,8 @@ def calc_landscape_tasc(function, grid_point_array, r=0):
     tsc_landscape = np.empty(landscape_shape)
     mean_asc_landscape = np.empty(landscape_shape)
     mean_sc_landscape = np.empty(landscape_shape)
+    no_of_points = N**dim
+    j = 1
     for idx, _ in np.ndenumerate(tasc_landscape):
         point = []
         # generate point in grid array
@@ -75,8 +78,10 @@ def calc_landscape_tasc(function, grid_point_array, r=0):
             point.append(grid_point_array[i][dimension])
             i += 1
         point = np.asarray(point)
+        #print(f"Calculating for point {j}/{no_of_points}", point.tolist())
         # calculate tasc, tsc, mean absolute sc and mean sc values at this point
         tasc_landscape[idx],tsc_landscape[idx],mean_asc_landscape[idx], mean_sc_landscape[idx] = calc_several_scalar_curvature_values(function, r, point)
+        j += 1
     return tasc_landscape, tsc_landscape, mean_asc_landscape, mean_sc_landscape
 
 def plot_2D_surface(points, values, label, title, file_name):
@@ -274,7 +279,7 @@ def cost_func_grid_TASC():
     cost_function = get_basic_3D_cost_function()
     # compute TASC, TSC, Mean SC and Mean ASC values
     date = datetime.today().strftime('%Y-%m-%d')
-    results = {"date": date, "info": f"QNN Cost Function (3D): num_qubits = {num_qubits}, num_layers = {num_layers}, num_data_points = {num_data_points}, Schmidt = {schmidt_rank},", "grid points": points.tolist()}
+    results = {"date": date, "info": f"QNN Cost Function (3D): num_qubits = {1}, num_layers = {1}, num_data_points = {1}, Schmidt = {1},", "grid points": points.tolist()}
     for i in range(1):
         start = time.time()
         tasc_landscape, tsc_landscape, mean_asc_landscape, mean_sc_landscape = calc_landscape_tasc(cost_function, points)
@@ -2211,45 +2216,52 @@ def print_array_summary(array):
     print("max", np.max(array))
     print("min", np.min(array))
 
-def one_iteration_grid_TASC(function, lower_left, stepsize, directory, iteration, N=10):
+def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iteration=0, N=10,plots=False):
     '''
         Calculates TASC of a function for every point on a grid and outputs corresponding information, such as outliers and plots.
     '''
+    #sys.stdout = open("plots/preliminary_tests/cost_function/third_test_2025-03-11/result.txt", 'w')
     label = "TASC"
     start = time.time()
+    print("Generating grid point array...")
     points = generate_grid_point_array(stepsize,lower_left,N)
-    tasc_landscape,_,_,_ = calc_landscape_tasc(function, points)
+    print("Calculating TASC landscape...")
+    tasc_landscape,_,_,_ = calc_landscape_tasc(function, points, r=stepsize)
     print("Number of Grid Points", N)
-    print("Grid Points", points.tolist())
-    print("TASC", tasc_landscape.tolist())
+    #print("Grid Points", points.tolist())
+    #print("TASC", tasc_landscape.tolist())
     print_array_summary(tasc_landscape)
     outlier_points, outlier_values = determine_outliers_in_grid(points, tasc_landscape)
     print("Outlier Points", outlier_points)
     print("Outlier TASC Values", outlier_values)
-    file_name = f"QNN_3D_cost_TASC_iteration_{iteration}_"
-    red_points = np.asarray([points[1,:], points[2,:]])
-    for i in range(len(points[0])):
-            dir = f"plots/preliminary_tests/cost_function/first_test_2025-03-10/Iteration{iteration}"
-            os.makedirs(dir, exist_ok=True)
-            values = tasc_landscape[i,:,:]
-            title = f"{label} for 3D cost function (S-Rank = 1, num_data_points = 1) \n where $x_1 = {points[0][i]}$"
-            file_name = f"{directory}/Iteration{iteration}/QNN_3D_cost_{label}_iteration{iteration}_x1={points[0][i]}_surface"
-            file_name2 = f"{directory}/Iteration{iteration}/QNN_3D_cost_{label}_iteration{iteration}_x1={points[0][i]}_circle"
-            plot_2D_surface(red_points, values, label, title, file_name)
-            plot_2D_overlapping_circles(red_points, values, label, title, file_name2)
+    dim = len(lower_left)
     elapsed_time = time.time()-start
     print("Time (minutes)", np.round(elapsed_time/60,3))
+    #sys.stdout.close()
+    if dim == 3 and plots==True:
+        file_name = f"QNN_3D_cost_TASC_iteration_{iteration}_"
+        red_points = np.asarray([points[1,:], points[2,:]])
+        for i in range(len(points[0])):
+                dir = f"plots/preliminary_tests/{directory}/Iteration{iteration}"
+                os.makedirs(dir, exist_ok=True)
+                values = tasc_landscape[i,:,:]
+                title = f"{label} for 3D cost function (S-Rank = 2, num_data_points = 1) \n where $x_1 = {points[0][i]}$"
+                file_name = f"{directory}/Iteration{iteration}/QNN_3D_cost_{label}_iteration{iteration}_x1={points[0][i]}_surface"
+                file_name2 = f"{directory}/Iteration{iteration}/QNN_3D_cost_{label}_iteration{iteration}_x1={points[0][i]}_circle"
+                plot_2D_surface(red_points, values, label, title, file_name)
+                plot_2D_overlapping_circles(red_points, values, label, title, file_name2)
+    return elapsed_time
 
-def get_basic_3D_cost_function():
+def get_basic_3D_cost_function(s_rank=1, ndp=1,type_of_data =1):
     num_qubits = 1
     num_layers = 1
     
-    num_data_points = 1
+    num_data_points = ndp
 
-    schmidt_rank = 1
+    schmidt_rank = s_rank
     qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
     unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-    inputs = generate_data_points(type_of_data=1, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
+    inputs = generate_data_points(type_of_data=type_of_data, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
     dimensions = num_qubits * num_layers * 3
     x = inputs
     expected_output = torch.matmul(unitary, x)
@@ -2260,21 +2272,82 @@ def get_basic_3D_cost_function():
         return cost.item()
     return cost_function
 
+def get_basic_6D_cost_function(s_rank=1, ndp=1,type_of_data =1):
+    num_qubits = 2
+    num_layers = 1
+    
+    num_data_points = ndp
+
+    schmidt_rank = s_rank
+    qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
+    unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
+    inputs = generate_data_points(type_of_data=type_of_data, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
+    dimensions = num_qubits * num_layers * 3
+    x = inputs
+    expected_output = torch.matmul(unitary, x)
+    y_true = expected_output.conj()
+    def cost_function(x_in):
+        qnn.params = torch.tensor(x_in, dtype=torch.float64, requires_grad=True).reshape(qnn.params.shape)
+        cost = cost_func(inputs, y_true, qnn, device="cpu") 
+        return cost.item()
+    return cost_function
+
+
+
+def test_3D_CostFunc():
+    num_qubits = 1
+    s_ranks = [1,2,3,4]
+    num_data_points = [1,2,3,4]
+    data_types = [1,2,3,4]
+    c = np.asarray([0,0,0,0,0,0])
+    times = []
+    for s in s_ranks:
+        for ndp in num_data_points:
+            for type in data_types:
+                print(f"Schmidt rank = {s}, number of data points = {ndp}, data type = {type}")
+                try:
+                    cost_function = get_basic_6D_cost_function(s, ndp, type)
+                    time = one_iteration_grid_TASC(cost_function, c, 1, N=4)
+                    times.append(time)
+                except:
+                    print("An Exception occured")
+    print("average time", np.round(np.mean(times)/60,3))
+
+
+
 if __name__ == "__main__":
     #cost_func_grid_TASC()
     #plot_all_tasc_grids_from_run0()
-    directory = "plots/preliminary_tests/cost_function/first_test_2025-03-10"
+    directory = "plots/preliminary_tests/cost_function/second_test_2025-03-10"
     os.makedirs(directory, exist_ok=True)
-    directory = "cost_function/first_test_2025-03-10/"
-    cost_function = get_basic_3D_cost_function()
-    c = np.asarray([5,4,0]) 
-    N = 9
-    stepsize = 2/(N-1)
-    #one_iteration_grid_TASC(cost_function, c, stepsize, directory, 2, N=N)
-    points = np.asarray([[5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5, 6.75, 7.0], [4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5, 5.75, 6.0], [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]])
+    directory = "cost_function/third_test_2025-03-10/"
+    cost_function = get_basic_6D_cost_function(s_rank=4, ndp=1)
+    c = np.asarray([0,0,0,0,0,0]) 
+    N = 5
+    stepsize = 1.75
+    #print("QNN 6D, Schmidt Rank = 4, Num Data Points = 1")
+    #one_iteration_grid_TASC(cost_function, c, stepsize, directory, 0, N=N)
+    test_3D_CostFunc()
+"""     points = np.asarray([[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]])
+    tasc_landscape = np.asarray([[[43.894, 40.24, 38.468, 39.819, 38.892, 43.963, 40.213], [43.486, 42.007, 41.373, 40.635, 39.099, 39.701, 42.173], [46.381, 46.203, 45.982, 45.675, 46.466, 46.319, 47.529], [49.151, 55.274, 50.106, 49.263, 51.866, 53.366, 55.004], [49.712, 47.465, 48.37, 49.196, 50.233, 49.207, 48.479], [41.417, 43.551, 42.102, 44.566, 43.849, 40.312, 41.027], [43.361, 41.674, 40.922, 42.545, 41.902, 41.052, 39.519]], [[21.613, 22.246, 21.684, 23.082, 21.903, 21.584, 21.144], [35.766, 33.824, 34.549, 34.761, 35.67, 34.35, 34.066], [43.133, 45.103, 44.306, 41.932, 43.607, 42.497, 43.188], [44.868, 44.266, 44.502, 44.378, 44.257, 46.278, 46.125], [38.249, 32.798, 32.251, 33.089, 38.97, 34.298, 34.206], [22.468, 22.328, 21.779, 21.895, 22.498, 22.184, 21.564], [23.878, 26.859, 27.478, 26.353, 25.384, 26.299, 24.282]], [[9.046, 8.726, 8.057, 8.614, 8.031, 8.535, 8.394], [16.451, 15.805, 15.98, 15.986, 15.036, 15.651, 15.279], [27.711, 27.78, 29.232, 26.757, 29.107, 28.733, 28.519], [33.383, 31.947, 31.139, 31.113, 33.032, 31.345, 35.982], [20.826, 19.039, 19.099, 18.738, 19.512, 19.299, 17.955], [10.762, 9.793, 9.091, 10.114, 10.127, 9.327, 9.884], [14.281, 14.029, 14.395, 13.591, 14.377, 13.954, 14.269]], [[7.536, 7.079, 7.228, 7.037, 7.173, 7.178, 7.056], [7.577, 7.485, 7.275, 7.942, 7.754, 8.089, 6.944], [13.367, 13.888, 13.325, 13.803, 13.944, 14.068, 13.099], [20.436, 20.188, 20.017, 21.397, 20.165, 23.2, 22.135], [20.161, 23.754, 22.377, 21.538, 23.253, 23.356, 21.957], [23.588, 24.75, 24.467, 24.967, 23.029, 24.071, 23.633], [18.351, 18.577, 17.24, 17.151, 17.378, 18.374, 18.037]], [[13.046, 13.319, 12.81, 13.472, 14.924, 12.769, 13.63], [8.595, 8.58, 8.86, 9.184, 9.023, 8.873, 9.064], [16.017, 16.016, 15.872, 17.042, 16.347, 16.05, 16.96], [45.317, 42.991, 41.944, 39.521, 43.433, 43.537, 43.985], [70.239, 72.783, 66.654, 64.94, 70.48, 68.006, 67.675], [66.576, 60.05, 60.11, 66.292, 64.318, 64.018, 66.184], [33.934, 33.498, 34.671, 33.153, 30.695, 32.215, 33.064]], [[30.771, 28.343, 31.672, 31.967, 27.238, 30.725, 30.681], [22.946, 21.633, 22.442, 21.626, 21.784, 23.149, 21.265], [33.388, 32.145, 33.344, 31.084, 33.842, 32.998, 32.196], [74.317, 76.495, 75.007, 77.456, 75.965, 73.286, 72.853], [101.51, 99.791, 100.78, 106.688, 100.815, 98.739, 106.145], [82.637, 90.912, 78.336, 81.93, 81.388, 80.929, 86.452], [46.239, 46.792, 48.535, 44.473, 47.214, 44.543, 45.858]], [[44.697, 43.86, 44.558, 41.512, 44.194, 41.511, 45.293], [38.64, 43.091, 45.266, 39.058, 40.865, 40.781, 41.789], [50.867, 54.11, 52.918, 53.929, 52.463, 51.453, 53.971], [70.992, 71.46, 68.741, 69.988, 73.128, 72.621, 74.914], [66.958, 70.332, 72.951, 70.078, 73.868, 72.905, 71.46], [55.554, 54.561, 52.553, 56.959, 59.727, 56.855, 56.635], [49.827, 45.978, 51.264, 45.611, 47.227, 48.616, 48.576]]])
+    label = "TASC"
+    red_points = np.asarray([points[1,:], points[2,:]])
+    for i in range(len(points[0])):
+        dir = f"plots/preliminary_tests/cost_function/second_test_2025-03-10/"
+        os.makedirs(dir, exist_ok=True)
+        values = tasc_landscape[i,:,:]
+        title = f"{label} for 3D cost function (S-Rank = 2, num_data_points = 1) \n where $x_1 = {points[0][i]}$"
+        file_name = f"{directory}/QNN_3D_cost_{label}_x1={points[0][i]}_surface"
+        file_name2 = f"{directory}/QNN_3D_cost_{label}_x1={points[0][i]}_circle"
+        plot_2D_surface(red_points, values, label, title, file_name)
+        plot_2D_overlapping_circles(red_points, values, label, title, file_name2) """
+
+
+
+"""     points = np.asarray([[5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5, 6.75, 7.0], [4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5, 5.75, 6.0], [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]])
     array = np.asarray([[[0.108, 0.118, 0.115, 0.12, 0.106, 0.111, 0.115, 0.111, 0.115], [0.101, 0.101, 0.101, 0.107, 0.106, 0.104, 0.108, 0.104, 0.102], [0.102, 0.104, 0.102, 0.107, 0.106, 0.105, 0.109, 0.107, 0.107], [0.114, 0.114, 0.11, 0.108, 0.112, 0.111, 0.114, 0.118, 0.112], [0.119, 0.117, 0.114, 0.124, 0.112, 0.124, 0.12, 0.117, 0.124], [0.125, 0.124, 0.124, 0.136, 0.13, 0.127, 0.134, 0.127, 0.12], [0.148, 0.148, 0.15, 0.15, 0.147, 0.15, 0.15, 0.151, 0.149], [0.175, 0.174, 0.188, 0.193, 0.184, 0.18, 0.176, 0.178, 0.179], [0.215, 0.215, 0.23, 0.214, 0.213, 0.209, 0.22, 0.2, 0.218]], [[0.132, 0.139, 0.133, 0.135, 0.145, 0.13, 0.141, 0.142, 0.131], [0.142, 0.148, 0.138, 0.128, 0.136, 0.142, 0.139, 0.137, 0.143], [0.149, 0.153, 0.149, 0.149, 0.146, 0.139, 0.155, 0.149, 0.156], [0.166, 0.154, 0.166, 0.162, 0.162, 0.176, 0.167, 0.169, 0.163], [0.19, 0.191, 0.177, 0.192, 0.181, 0.191, 0.187, 0.172, 0.178], [0.194, 0.209, 0.202, 0.194, 0.2, 0.206, 0.215, 0.206, 0.192], [0.226, 0.228, 0.221, 0.236, 0.221, 0.226, 0.233, 0.228, 0.226], [0.262, 0.271, 0.272, 0.261, 0.262, 0.263, 0.27, 0.267, 0.279], [0.322, 0.318, 0.308, 0.304, 0.297, 0.299, 0.302, 0.276, 0.284]], [[0.198, 0.208, 0.201, 0.212, 0.194, 0.214, 0.213, 0.199, 0.195], [0.204, 0.204, 0.209, 0.211, 0.216, 0.211, 0.226, 0.202, 0.21], [0.225, 0.226, 0.227, 0.223, 0.226, 0.219, 0.238, 0.23, 0.228], [0.244, 0.249, 0.246, 0.254, 0.256, 0.237, 0.243, 0.249, 0.25], [0.25, 0.263, 0.264, 0.267, 0.268, 0.265, 0.261, 0.259, 0.258], [0.271, 0.279, 0.276, 0.268, 0.284, 0.302, 0.263, 0.278, 0.281], [0.304, 0.308, 0.294, 0.307, 0.316, 0.319, 0.31, 0.319, 0.307], [0.349, 0.354, 0.355, 0.365, 0.33, 0.364, 0.342, 0.357, 0.362], [0.386, 0.388, 0.416, 0.38, 0.388, 0.395, 0.393, 0.388, 0.395]], [[0.257, 0.268, 0.262, 0.248, 0.254, 0.263, 0.259, 0.27, 0.257], [0.265, 0.286, 0.265, 0.282, 0.272, 0.261, 0.263, 0.282, 0.276], [0.293, 0.293, 0.292, 0.307, 0.313, 0.295, 0.283, 0.3, 0.293], [0.319, 0.322, 0.332, 0.307, 0.324, 0.312, 0.322, 0.32, 0.322], [0.344, 0.359, 0.354, 0.359, 0.341, 0.356, 0.339, 0.373, 0.333], [0.391, 0.355, 0.374, 0.362, 0.357, 0.362, 0.344, 0.37, 0.367], [0.359, 0.386, 0.38, 0.379, 0.395, 0.377, 0.373, 0.369, 0.388], [0.413, 0.416, 0.441, 0.42, 0.424, 0.419, 0.409, 0.428, 0.414], [0.5, 0.449, 0.517, 0.481, 0.447, 0.493, 0.491, 0.489, 0.456]], [[0.358, 0.335, 0.353, 0.384, 0.352, 0.368, 0.36, 0.368, 0.349], [0.344, 0.363, 0.342, 0.365, 0.341, 0.348, 0.354, 0.346, 0.34], [0.384, 0.372, 0.379, 0.388, 0.376, 0.389, 0.357, 0.362, 0.378], [0.403, 0.385, 0.402, 0.428, 0.418, 0.418, 0.418, 0.439, 0.403], [0.437, 0.423, 0.41, 0.425, 0.432, 0.45, 0.431, 0.421, 0.428], [0.411, 0.394, 0.439, 0.4, 0.43, 0.427, 0.406, 0.417, 0.426], [0.42, 0.424, 0.385, 0.427, 0.441, 0.443, 0.423, 0.42, 0.416], [0.506, 0.457, 0.462, 0.5, 0.501, 0.504, 0.475, 0.497, 0.488], [0.539, 0.544, 0.581, 0.585, 0.57, 0.58, 0.549, 0.569, 0.546]], [[0.541, 0.481, 0.496, 0.494, 0.454, 0.509, 0.499, 0.525, 0.479], [0.477, 0.482, 0.46, 0.463, 0.446, 0.464, 0.474, 0.453, 0.474], [0.476, 0.512, 0.486, 0.476, 0.489, 0.509, 0.479, 0.503, 0.486], [0.516, 0.522, 0.522, 0.522, 0.533, 0.49, 0.501, 0.497, 0.507], [0.48, 0.511, 0.51, 0.519, 0.513, 0.528, 0.506, 0.5, 0.505], [0.471, 0.47, 0.48, 0.487, 0.503, 0.514, 0.49, 0.517, 0.516], [0.483, 0.483, 0.449, 0.508, 0.457, 0.496, 0.502, 0.482, 0.464], [0.522, 0.534, 0.55, 0.523, 0.542, 0.556, 0.525, 0.577, 0.525], [0.548, 0.575, 0.604, 0.561, 0.615, 0.635, 0.596, 0.607, 0.597]], [[0.615, 0.627, 0.626, 0.617, 0.603, 0.625, 0.624, 0.65, 0.627], [0.586, 0.636, 0.602, 0.587, 0.619, 0.596, 0.62, 0.653, 0.59], [0.582, 0.585, 0.587, 0.632, 0.605, 0.61, 0.565, 0.584, 0.638], [0.601, 0.607, 0.612, 0.578, 0.608, 0.6, 0.649, 0.622, 0.625], [0.627, 0.58, 0.611, 0.647, 0.608, 0.57, 0.627, 0.618, 0.6], [0.593, 0.558, 0.576, 0.591, 0.573, 0.585, 0.571, 0.577, 0.578], [0.567, 0.585, 0.564, 0.579, 0.592, 0.586, 0.563, 0.598, 0.566], [0.62, 0.651, 0.634, 0.638, 0.617, 0.642, 0.603, 0.633, 0.621], [0.692, 0.716, 0.665, 0.664, 0.664, 0.655, 0.659, 0.619, 0.678]], [[0.804, 0.793, 0.771, 0.765, 0.789, 0.795, 0.812, 0.771, 0.803], [0.74, 0.774, 0.793, 0.706, 0.736, 0.742, 0.734, 0.756, 0.743], [0.734, 0.699, 0.724, 0.698, 0.718, 0.711, 0.712, 0.703, 0.728], [0.688, 0.753, 0.74, 0.73, 0.703, 0.722, 0.679, 0.735, 0.747], [0.704, 0.651, 0.667, 0.652, 0.692, 0.716, 0.691, 0.643, 0.7], [0.628, 0.657, 0.617, 0.646, 0.638, 0.624, 0.607, 0.664, 0.622], [0.637, 0.606, 0.606, 0.618, 0.658, 0.63, 0.629, 0.648, 0.637], [0.662, 0.681, 0.642, 0.653, 0.634, 0.649, 0.651, 0.59, 0.66], [0.707, 0.67, 0.686, 0.664, 0.69, 0.697, 0.642, 0.695, 0.702]], [[0.903, 0.896, 0.934, 0.937, 0.932, 0.896, 0.872, 0.908, 0.901], [0.821, 0.84, 0.854, 0.801, 0.838, 0.806, 0.814, 0.866, 0.838], [0.776, 0.836, 0.8, 0.768, 0.797, 0.855, 0.815, 0.806, 0.78], [0.808, 0.782, 0.83, 0.798, 0.755, 0.761, 0.756, 0.798, 0.781], [0.795, 0.744, 0.73, 0.782, 0.71, 0.745, 0.758, 0.768, 0.741], [0.725, 0.722, 0.71, 0.709, 0.697, 0.681, 0.709, 0.733, 0.706], [0.679, 0.678, 0.643, 0.644, 0.661, 0.677, 0.688, 0.641, 0.63], [0.656, 0.692, 0.63, 0.663, 0.648, 0.699, 0.643, 0.652, 0.685], [0.672, 0.716, 0.695, 0.7, 0.65, 0.639, 0.693, 0.68, 0.667]]])
     for t in [2.75,2.5,2.25,2]:
         outlier_points, outlier_values = determine_outliers_in_grid(points, array, z_score_threshold=t)
         print("Threshold", t)
         print("Outlier Points", outlier_points)
-        print("Outlier TASC Values", outlier_values)
+        print("Outlier TASC Values", outlier_values) """

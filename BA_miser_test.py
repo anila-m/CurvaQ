@@ -6,7 +6,7 @@ from miser.SimpleMonteCarlo import *
 from miser.test_functions import *
 from BA_testing import rosen_projection_to_2d
 from metrics import calc_scalar_curvature_for_function
-from BA_grid_TASC import get_basic_3D_cost_function
+from BA_grid_TASC import get_basic_3D_cost_function, get_basic_6D_cost_function
 from scipy.optimize import rosen
 
 def test_miser():
@@ -161,11 +161,11 @@ def integrate_cube_MISER(func, lowerleft, upperright, N=1000):
 def get_ASC_function(func):
     def absolute_scalar_curvature(x):
         points = [x.tolist()]
-        result = calc_scalar_curvature_for_function(rosen_projection_to_2d, points)
+        result = calc_scalar_curvature_for_function(func, points)
         return np.absolute(result[0])
     return absolute_scalar_curvature
 
-def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000):
+def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000, title="func", file_title="func"):
     '''
         Comparison of TASC of function func within a hypercube when intergral is computed with regular Monte Carlo
         or MISER. Hypercube is given by a lower left corner and upper right corner.
@@ -184,7 +184,7 @@ def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000):
         miser_results.append(miser_result)
         times_miser.append(time_miser)
         Ns_miser.append(N_miser)
-    print(f"Total absolute SC of function {func}.")
+    print(f"Total absolute SC of {title}.")
     print(f"Integrated within hypercupe with lowerleft={lowerleft}, upperright={upperright}")
     print(f"Median results over 100 repetitions")
     print(f"regular MC: TASC = {np.median(mc_results)}, N={N}, time (s)= {np.median(times_mc)}")
@@ -193,22 +193,22 @@ def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000):
     plt.boxplot([miser_results, mc_results], labels=['MISER', 'regular MC'], showfliers=False)
 
     # Adding a title and labels
-    plt.title('2D Rosenbrock TASC values within hypercube ([0,0] - [2,2]).\n 100 computations.')
+    plt.title(f'{title} TASC values within hypercube ([0,...,0] - [2,...,2]).\n 100 computations.')
     plt.ylabel('TASC values')
 
     # Display the plot
-    file_name = "2Drosen_MISER_comparison_noFliers"
+    file_name = f"{file_title}_MISER_comparison_noFliers"
     plt.savefig(f"plots/preliminary_tests/MISER/{file_name}.png", dpi=500)
     plt.close()
     # Creating a boxplot for both datasets
     plt.boxplot([miser_results, mc_results], labels=['MISER', 'regular MC'])
 
     # Adding a title and labels
-    plt.title('2D Rosenbrock TASC values within hypercube ([0,0] - [2,2]).\n 100 computations.')
+    plt.title(f'{title} TASC values within hypercube ([0,...,0] - [2,...,2]).\n 100 computations.')
     plt.ylabel('TASC values')
 
     # Display the plot
-    file_name = "2Drosen_MISER_comparison"
+    file_name = f"{file_title}_MISER_comparison"
     plt.savefig(f"plots/preliminary_tests/MISER/{file_name}.png", dpi=500)
     plt.close()
 
@@ -216,5 +216,11 @@ def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000):
 
 if __name__=="__main__":
     Ns = [1000]
+    func = get_basic_3D_cost_function()
+    dim = 2
+    low = np.zeros(dim)
+    high = np.ones(dim)*2
+    title = "2D rosenbrock func (reduction from 3D)"
+    file_title = "2Drosen"
     for N in Ns:
-        compare_Miser_with_MC_TASC(rosen_projection_to_2d, [0,0], [2,2], N=N)
+        compare_Miser_with_MC_TASC(rosen_projection_to_2d, low, high, N=N, title=title, file_title=file_title)

@@ -35,7 +35,9 @@ def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1
     dimensions = len(c)
     # get sample points within hypersphere
     sample_points = sample_n_ball_uniform(dimensions, r, c, N)
+    
     scalar_curvature_landscape = calc_scalar_curvature_for_function(function, sample_points)
+    
     # get volume of hypersphere
     hypersphere_volume = get_hypersphere_volume(dimensions, r)
     # compute total absolute sc
@@ -70,7 +72,6 @@ def calc_several_scalar_curvature_values(function, r, c, N=1000, absolute=True):
     # get sample points within hypersphere
     sample_points = sample_n_ball_uniform(dimensions, r, c, N) #TODO: wenn andere sampling Methoden implementiert wurden erweitern
     scalar_curvature_landscape = calc_scalar_curvature_for_function(function, sample_points)
-
     # calculate total (absolute) scalar curvature
     # get volume of hypersphere
     hypersphere_volume = get_hypersphere_volume(dimensions, r)

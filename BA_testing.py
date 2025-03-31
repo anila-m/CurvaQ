@@ -179,6 +179,72 @@ def get_max_N_values(list, N):
         values.append(max_value)
     return values, idx
 
+def plot_rosenbrock_gradient():
+    file = "results/preliminary_tests/rosenbrock2D_projection_2025-02-12.json"
+    with open(file) as f:
+        d = json.load(f)
+        result = d["822"]
+        sc_values = np.asarray(result["SC values"])
+        sample_points = np.asarray(result["sample points"])
+        X = sample_points[:,0]
+        Y = sample_points[:,1]
+        tasc = float(result["tasc"])
+        gradients = []
+        hessians = []
+        for point in sample_points:
+            gradients.append(sp.optimize.approx_fprime(point, rosen_projection_to_2d))
+            hessians.append(calc_hessian(rosen_projection_to_2d, point))
+        gradients = np.asarray(gradients)
+        print(tasc)
+        ax = plt.subplot(111, projection='3d')
+        sc = ax.scatter(X, Y, gradients[:,0], c=sc_values,cmap="viridis")
+        ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel='gradient')
+        plt.title(f"Partial Gradients ($\partial/\partial x_1$) of Rosenbrock function\nfor $x_3=1$ at sample points. TASC = {tasc}")
+        cbar = plt.colorbar(sc)
+        cbar.set_label("$\partial/\partial x_1$", labelpad=10)
+        plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_gradientsx1_sample_points.png")
+        plt.close()
+        del ax
+        ax = plt.subplot(111, projection='3d')
+        sc = ax.scatter(X, Y, gradients[:,1], c=sc_values,cmap="viridis")
+        ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel='gradient')
+        cbar = plt.colorbar(sc)
+        cbar.set_label("$\partial/\partial x_2$", labelpad=10)
+        plt.title(f"Partial Gradients ($\partial/\partial x_2$) of Rosenbrock function\nfor $x_3=1$ at sample points. TASC = {tasc}")
+        plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_gradientsx2_sample_points.png")
+        plt.close()
+
+def analyse_rosenbrock_gradient():
+    #r_values = [1, 0.1, 0.01, 0.001, 0.0001]
+    r_values = [0.01]
+    c= np.asarray([1,1])
+    print(f"Analyzing gradient and hessian norm around {c} for 2D Rosenbrock")
+    print(f"number of sample points per radius: 100000")
+    print("----------------------------")
+    maximums = {}
+    for r in r_values:
+        sample_points = sample_n_ball_uniform(n=2, r=r, c=c, N=100000)
+        gradients = []
+        hessians = []
+        for point in sample_points:
+            gradients.append(sp.optimize.approx_fprime(point, rosen_projection_to_2d))
+            hessians.append(calc_hessian(rosen_projection_to_2d, point))
+        gradients = np.asarray(gradients)
+        hessians = np.asarray(hessians)
+        print(f"Radius {r}")
+        grad_norm = np.linalg.norm(gradients, axis=1)
+        hess_norm = np.linalg.norm(hessians, axis=(1,2))
+        max_grad = np.max(grad_norm)
+        max_hess = np.max(hess_norm)
+        print("Gradient Norm")
+        print(f"Median: {np.median(grad_norm)}, Mean: {np.mean(grad_norm)}, Minimum: {np.min(grad_norm)}, Maximum: {max_grad}")
+        print("Hessian Norm")
+        print(f"Median: {np.median(hess_norm)}, Mean: {np.mean(hess_norm)}, Minimum: {np.min(hess_norm)}, Maximum: {max_hess}")
+        print("----------------------------")
+        maximums[r] = [max_grad, max_hess]
+    return maximums
+
+
 def plot_rosenbrock_SC():
     file = "results/preliminary_tests/rosenbrock2D_projection_2025-02-12.json"
     with open(file) as f:
@@ -280,8 +346,6 @@ def plot_rosenbrock_SC():
     plt.title("Scalar Curvature for Rosenbrock function for $x_3=1$")
     plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_SC_grid_abitsmaller.png", dpi=500)
 
-
-
 if __name__ == "__main__":
     r = 1
     c = np.array([1,2,1])
@@ -292,5 +356,10 @@ if __name__ == "__main__":
     #print(calc_total_absolute_scalar_curvature(rosen,r,c,N=1000))
     #testing_rosenbrock_3D(dim=2)
     #test_rosenbrock_derivatives()
-    plot_rosenbrock_SC()
+    point = np.asarray([1.0,1.0])
+    grad = sp.optimize.approx_fprime(point, rosen_projection_to_2d)
+    hess = calc_hessian(rosen_projection_to_2d, point)
+    print("Point", point)
+    print("Gradient norm", np.linalg.norm(grad))
+    print("Hessian norm", np.linalg.norm(hess))
 

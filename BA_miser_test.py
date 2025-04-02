@@ -8,6 +8,7 @@ from BA_testing import rosen_projection_to_2d
 from metrics import calc_scalar_curvature_for_function
 from BA_grid_TASC import get_basic_3D_cost_function, get_basic_6D_cost_function
 from scipy.optimize import rosen
+from BA_testing_functions import get_ASC_function
 
 def test_miser():
     '''
@@ -157,13 +158,6 @@ def integrate_cube_MISER(func, lowerleft, upperright, N=1000):
     #miser_result = ave*volume
     elapsed_time = time.time()-start
     return ave, N, np.round(elapsed_time, 3)
-
-def get_ASC_function(func):
-    def absolute_scalar_curvature(x):
-        points = [x.tolist()]
-        result = calc_scalar_curvature_for_function(func, points)
-        return np.absolute(result[0])
-    return absolute_scalar_curvature
 
 def compare_Miser_with_MC_TASC(func, lowerleft, upperright, N=1000, title="func", file_title="func"):
     '''

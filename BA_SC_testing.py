@@ -2,13 +2,9 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib import cm
-
+from BA_testing_functions import f
 from metrics import *
 
-def f(x):
-    if x.shape[0] != 2:
-        raise Exception("Input has to have length of 2.")
-    return x[0]**2 - x[1]**2
 
 def plot_function(func, point, radius):
     grid_size = 100

@@ -1,0 +1,42 @@
+Info: N=3, dim=3, s_rank=4, num_data_points=4, data_type=4
+TASC
+summary:
+median 291.012
+mean 298.02637037037044
+std 44.80753931447677
+variance 2007.7155794183814
+max 413.738
+min 239.363
+Outlier Points[]
+Outlier TASC Values[]
+TSC
+summary:
+median -159.22
+mean -158.0692222222222
+std 14.661469385542834
+variance 214.95868454320976
+max -127.183
+min -185.913
+Outlier Points[]
+Outlier TSC Values[]
+MASC
+summary:
+median 2.241
+mean 2.2947037037037035
+std 0.34506798201007405
+variance 0.11907191220850478
+max 3.186
+min 1.843
+Outlier Points[]
+Outlier MASC Values[]
+MSC
+summary:
+median -1.226
+mean -1.217
+std 0.11288309258960172
+variance 0.012742592592592594
+max -0.979
+min -1.431
+Outlier Points[]
+Outlier MSC Values[]
+Time (minutes): 0.535

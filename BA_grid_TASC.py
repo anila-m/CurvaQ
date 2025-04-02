@@ -12,6 +12,7 @@ from matplotlib import cm
 from sklearn import preprocessing
 from scipy import stats
 
+from BA_testing_functions import get_basic_6D_cost_function, get_basic_3D_cost_function
 from metrics import *
 from BA_testing import rosen_projection_to_2d
 
@@ -2210,16 +2211,27 @@ def plot_all_QNN_tasc_grids():
         print("Points", a)
         print("Values", b)
 
-def print_array_summary(array):
-    print("summary:")
-    print("median", np.median(array))
-    print("mean", np.mean(array))
-    print("std", np.std(array))
-    print("variance", np.var(array))
-    print("max", np.max(array))
-    print("min", np.min(array))
+def print_array_summary(array, file=""):
+    if file!="":
+        f = open(file, "a")
+        f.write("summary:\n")
+        f.write("median "+str(np.median(array))+"\n")
+        f.write("mean "+str(np.mean(array))+"\n")
+        f.write("std "+str(np.std(array))+"\n")
+        f.write("variance "+str(np.var(array))+"\n")
+        f.write("max "+str(np.max(array))+"\n")
+        f.write("min "+str(np.min(array))+"\n")
+        f.close()
+    else:
+        print("summary:")
+        print("median", np.median(array))
+        print("mean", np.mean(array))
+        print("std", np.std(array))
+        print("variance", np.var(array))
+        print("max", np.max(array))
+        print("min", np.min(array))
 
-def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iteration=0, N=10,plots=False):
+def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iteration=0, N=3,plots=False):
     '''
         Calculates TASC of a function for every point on a grid and outputs corresponding information, such as outliers and plots.
     '''
@@ -2229,14 +2241,34 @@ def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iterat
     print("Generating grid point array...")
     points = generate_grid_point_array(stepsize,lower_left,N)
     print("Calculating TASC landscape...")
-    tasc_landscape,_,_,_ = calc_landscape_tasc(function, points, r=stepsize)
+    tasc_landscape,tsc_landscape,masc_landscape,msc_landscape = calc_landscape_tasc(function, points, r=stepsize)
     print("Number of Grid Points", N)
     #print("Grid Points", points.tolist())
     #print("TASC", tasc_landscape.tolist())
+    print("TASC")
     print_array_summary(tasc_landscape)
     outlier_points, outlier_values = determine_outliers_in_grid(points, tasc_landscape)
     print("Outlier Points", outlier_points)
     print("Outlier TASC Values", outlier_values)
+    
+    print("TSC")
+    print_array_summary(tsc_landscape)
+    outlier_points, outlier_values = determine_outliers_in_grid(points, tsc_landscape)
+    print("Outlier Points", outlier_points)
+    print("Outlier TSC Values", outlier_values)
+
+    print("MASC")
+    print_array_summary(masc_landscape)
+    outlier_points, outlier_values = determine_outliers_in_grid(points, masc_landscape)
+    print("Outlier Points", outlier_points)
+    print("Outlier MASC Values", outlier_values)
+
+    print("MSC")
+    print_array_summary(msc_landscape)
+    outlier_points, outlier_values = determine_outliers_in_grid(points, msc_landscape)
+    print("Outlier Points", outlier_points)
+    print("Outlier MSC Values", outlier_values)
+
     dim = len(lower_left)
     elapsed_time = time.time()-start
     print("Time (minutes)", np.round(elapsed_time/60,3))
@@ -2254,48 +2286,6 @@ def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iterat
                 plot_2D_surface(red_points, values, label, title, file_name)
                 plot_2D_overlapping_circles(red_points, values, label, title, file_name2)
     return elapsed_time
-
-def get_basic_3D_cost_function(s_rank=1, ndp=1,type_of_data =1):
-    num_qubits = 1
-    num_layers = 1
-    
-    num_data_points = ndp
-
-    schmidt_rank = s_rank
-    qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-    inputs = generate_data_points(type_of_data=type_of_data, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
-    dimensions = num_qubits * num_layers * 3
-    x = inputs
-    expected_output = torch.matmul(unitary, x)
-    y_true = expected_output.conj()
-    def cost_function(x_in):
-        qnn.params = torch.tensor(x_in, dtype=torch.float64, requires_grad=True).reshape(qnn.params.shape)
-        cost = cost_func(inputs, y_true, qnn, device="cpu") 
-        return cost.item()
-    return cost_function
-
-def get_basic_6D_cost_function(s_rank=1, ndp=1,type_of_data =1):
-    num_qubits = 2
-    num_layers = 1
-    
-    num_data_points = ndp
-
-    schmidt_rank = s_rank
-    qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-    inputs = generate_data_points(type_of_data=type_of_data, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
-    dimensions = num_qubits * num_layers * 3
-    x = inputs
-    expected_output = torch.matmul(unitary, x)
-    y_true = expected_output.conj()
-    def cost_function(x_in):
-        qnn.params = torch.tensor(x_in, dtype=torch.float64, requires_grad=True).reshape(qnn.params.shape)
-        cost = cost_func(inputs, y_true, qnn, device="cpu") 
-        return cost.item()
-    return cost_function
-
-
 
 def test_3D_CostFunc():
     num_qubits = 1

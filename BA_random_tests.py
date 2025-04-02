@@ -3,6 +3,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from metrics import *
+from BA_testing_functions import cosine_2D
 
 def plot_2D_surface(points, values):
     '''
@@ -49,11 +50,6 @@ def calc_landscape_tasc(grid_point_array, r=0):
         landscape[idx] = j
         print("idx", idx, "j", j, "point", point)
 
-def cosine_2D(x):
-    if len(x) != 2:
-        raise Exception
-    Z = (1/2) * (cos(2 * x[0]) + cos(2 * x[1]))
-    return Z
 
 def cosine_2D_tasc():
     stepsize = np.pi*2
@@ -86,10 +82,6 @@ def cosine_2D_tasc():
     plt.title("$f(x_1,x_2) = 1/2(cos(2x_1)+cos(2x_2))$")
     plt.savefig(filepath, dpi=500)
     plt.close()
-
-def analyze_gradients_high_tasc():
-    points = []
-
 
 if __name__=="__main__":
     cosine_2D_tasc()

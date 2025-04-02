@@ -109,16 +109,8 @@ def calc_scalar_curvature_for_function(function, sample_points):
     for idx in range(sample_points.shape[0]):
         # approximate dimsXdims sized hessian and dims sized vector of gradients for a specific point of the loss landscape
         # ------ ab hier anders --------
-        #print("jacobian")
-        #print("value", function(sample_points[idx,:]))
-        #gradient_vector = sp.differentiate.jacobian(function,sample_points[idx,:]).df #funktioniert (noch) nicht mit Kostenfunktion
         gradient_vector = sp.optimize.approx_fprime(sample_points[idx], function) # funktioniert mit Kostenfunktion
-        #gradient_vector = autograd
-        #print("hessian")
-        #point_hessian = sp.differentiate.hessian(function, sample_points[idx,:]).ddf
         point_hessian = calc_hessian(function, sample_points[idx,:])
-        #print("hessian", point_hessian)
-        #point_hessian = sp.optimize.approx_hess(sample_points[idx], function)
         # ------ bis hier anders -------
         # calculate scalar curvature from here
         beta = 1 / (1 + np.linalg.norm(gradient_vector) ** 2)

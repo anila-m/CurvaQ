@@ -74,7 +74,11 @@ def calc_several_scalar_curvature_values_parallel1(function, r, c, idx, N=1000, 
 
 def main_cost_function_experiment(num_qubits, directory="results/main_experiment/6D_cost"):
     '''
-        Main Experiment for 3D cost functions (32 configurations). Each Configuration: 5 repititions.
+        Main Experiment for 3D or 6D cost functions (32 configurations). Each Configuration: 5 repititions.
+
+        Args:
+            num_qubits (int): 1 or 2, (3D: 1, 6D: 2)
+            directory (String): directory to save json files in, optional.
     '''
     print(f"CPU Count: {os.cpu_count()}")
     if num_qubits<1 or num_qubits>2:
@@ -138,16 +142,6 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     '''
         Calculates TASC of a function for every point on a grid and outputs corresponding information, such as outliers and plots.
     '''
-    #TODO: argument: run id
-    #Done: save summary of gradient and hessian norms per point in grid
-    #Done: save summary of SC values per point in grid
-    #TODO: json files instead of txt files
-    #Done: save TASC, TSC, MSC, MASC landscapes
-    #TODO: MSC und MASC rausnehmen, stattdessen Volumen speichern?
-    #Done: save landscape summaries
-    #TODO: save point landscape? (is it needed?) --> function: get point from index in landscape and grid_point_array
-    #TODO: save unitary, databatch, training data info, etc.
-    #Done: save FD and FCoeff.
     results_dict = {} # info: runid, config id, schmidt rank, ndp, datatype, evtl nicht hier einfügen, sondern davor/übergeordnete Funktion
     start = time.time()
     points = generate_grid_point_array(stepsize,lower_left,N)

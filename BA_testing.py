@@ -342,7 +342,7 @@ def plot_rosenbrock_SC():
     points = np.ndarray((grid_size**2,2))
     points[:,0] = X.flatten()
     points[:,1] = Y.flatten()
-    sc_values = calc_scalar_curvature_for_function(rosen_projection_to_2d,points)
+    sc_values,_,_ = calc_scalar_curvature_for_function(rosen_projection_to_2d,points)
     ax = plt.subplot(111, projection='3d')
     ax.plot_surface(X, Y, sc_values.reshape(X.shape), rstride=1, cstride=1, cmap=cm.viridis, linewidth=0.1)
     ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel='SC')

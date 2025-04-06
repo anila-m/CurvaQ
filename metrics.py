@@ -36,7 +36,7 @@ def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1
     # get sample points within hypersphere
     sample_points = sample_n_ball_uniform(dimensions, r, c, N)
     
-    scalar_curvature_landscape = calc_scalar_curvature_for_function(function, sample_points)
+    scalar_curvature_landscape, grad_summary, hess_summary = calc_scalar_curvature_for_function(function, sample_points)
     
     # get volume of hypersphere
     hypersphere_volume = get_hypersphere_volume(dimensions, r)
@@ -46,7 +46,6 @@ def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1
         total_absolute_sc = np.sum(scalar_curvature_landscape)
     total_absolute_sc = total_absolute_sc * hypersphere_volume/N
     return np.round(total_absolute_sc, 3), scalar_curvature_landscape, sample_points
-
 
 
 def calc_several_scalar_curvature_values(function, r, c, N=1000, absolute=True):
@@ -67,11 +66,15 @@ def calc_several_scalar_curvature_values(function, r, c, N=1000, absolute=True):
         float: total scalar curvature
         float: mean absolute scalar curvature
         float: mean scalar curvature
+        array: [median, mean, min, max] of scalar curvature values at sample points
+        array: [median, mean, min, max] of gradient norms at sample points
+        array: [median, mean, min, max] of hessian norms at sample points
     '''
     dimensions = len(c)
     # get sample points within hypersphere
     sample_points = sample_n_ball_uniform(dimensions, r, c, N) #TODO: wenn andere sampling Methoden implementiert wurden erweitern
-    scalar_curvature_landscape = calc_scalar_curvature_for_function(function, sample_points)
+    scalar_curvature_landscape, grad_summary, hess_summary = calc_scalar_curvature_for_function(function, sample_points)
+    sc_summary = [np.median(scalar_curvature_landscape), np.mean(scalar_curvature_landscape), np.min(scalar_curvature_landscape), np.max(scalar_curvature_landscape)]
     # calculate total (absolute) scalar curvature
     # get volume of hypersphere
     hypersphere_volume = get_hypersphere_volume(dimensions, r)
@@ -84,7 +87,7 @@ def calc_several_scalar_curvature_values(function, r, c, N=1000, absolute=True):
     # calculate mean (aboslute) scalar curvature
     mean_sc = np.mean(scalar_curvature_landscape)
     mean_asc = np.mean(np.absolute(scalar_curvature_landscape))
-    return np.round(total_absolute_sc,3), np.round(total_sc,3), np.round(mean_asc,3), np.round(mean_sc,3)
+    return np.round(total_absolute_sc,3), np.round(total_sc,3), np.round(mean_asc,3), np.round(mean_sc,3), sc_summary, grad_summary, hess_summary
 
 # n-dimensional scalar curvature, for an objective function and a list of points, not "just" a landscape
 # Alina
@@ -100,10 +103,14 @@ def calc_scalar_curvature_for_function(function, sample_points):
 
     Returns:
         array: n dimensional scalar curvature array
+        array: [median, mean, min, max] of gradient norms at sample points
+        array: [median, mean, min, max] of hessian norms at sample points
+
     """
     sample_points = np.asarray(sample_points)
     scalar_curvature = np.ndarray(sample_points.shape[0])
-    #dims = sample_points.shape[1] #nicht nötig?
+    gradients = []
+    hessians = []
 
     # iterate over all sample points 
     for idx in range(sample_points.shape[0]):
@@ -111,6 +118,8 @@ def calc_scalar_curvature_for_function(function, sample_points):
         # ------ ab hier anders --------
         gradient_vector = sp.optimize.approx_fprime(sample_points[idx], function) # funktioniert mit Kostenfunktion
         point_hessian = calc_hessian(function, sample_points[idx,:])
+        gradients.append(gradient_vector)
+        hessians.append(point_hessian)
         # ------ bis hier anders -------
         # calculate scalar curvature from here
         beta = 1 / (1 + np.linalg.norm(gradient_vector) ** 2)
@@ -129,7 +138,11 @@ def calc_scalar_curvature_for_function(function, sample_points):
         )
         point_curv = left_term + right_term
         scalar_curvature[idx] = point_curv
-    return scalar_curvature
+    grad_norm = np.linalg.norm(np.asarray(gradients), axis=1)
+    hess_norm = np.linalg.norm(np.asarray(hessians), axis=(1,2))
+    gradient_summary = [float(np.median(grad_norm)), float(np.mean(grad_norm)), float(np.min(grad_norm)), float(np.max(grad_norm))]
+    hessian_summary = [float(np.median(hess_norm)), float(np.mean(hess_norm)), float(np.min(hess_norm)), float(np.max(hess_norm))]
+    return scalar_curvature, gradient_summary, hessian_summary
 
 # n-dimensional scalar curvature
 def calc_scalar_curvature(landscape):
@@ -228,14 +241,28 @@ def calc_fourier_density(landscape) -> float:
 
     Args:
         landscape (array): n dimensional landscape array
-
     """
-    fourier_result = np.fft.fftshift(np.fft.fftn(landscape, norm="forward"))
+    fourier_result = np.fft.fftshift(np.fft.fftn(landscape, norm="forward")) #Fourier Coefficients (oder?)
     fourier_density = round(
         (get_k_norm(fourier_result, 1) ** 2) / (get_k_norm(fourier_result, 2) ** 2),
         6,
     )
     return fourier_density
+
+# Alina
+def calc_fourier_density_and_coefficients(landscape):
+    """same as calc_fourier_density above 
+    but also returns the calculated coefficients
+
+    Args:
+        landscape (array): n dimensional landscape array
+    """
+    fourier_result = np.fft.fftshift(np.fft.fftn(landscape, norm="forward")) #Fourier Coefficients (oder?)
+    fourier_density = round(
+        (get_k_norm(fourier_result, 1) ** 2) / (get_k_norm(fourier_result, 2) ** 2),
+        6,
+    )
+    return fourier_density, fourier_result
 
 
 # calculates the fourier density by reshaping the fourier result to get an vector of Fourier coefficients

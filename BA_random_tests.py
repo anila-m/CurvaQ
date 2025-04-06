@@ -59,7 +59,7 @@ def cosine_2D_tasc():
     mascs = []
     mscs = []
     for _ in range(100):
-        tasc, tsc, masc, msc = calc_several_scalar_curvature_values(cosine_2D, stepsize, c)
+        tasc, tsc, masc, msc, _, _, _ = calc_several_scalar_curvature_values(cosine_2D, stepsize, c)
         tascs.append(tasc)
         tscs.append(tsc)
         mascs.append(masc)

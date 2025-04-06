@@ -8,14 +8,25 @@ from metrics import calc_scalar_curvature_for_function
 from qnns.qnn import get_qnn
 
 class CostFunction:
-    def __init__(self, num_qubits: int, s_rank: int, num_data_points: int, data_type: int):
+    def __init__(self,*, num_qubits=1, s_rank=0, num_data_points=0, data_type=0,unitary=None,inputs=None):
+        '''
+            Args:
+                unitary: numpy array of values (not torch.tensor)
+                inputs: numpy array of values (not torch.tensor)
+        '''
         num_layers = 1
         schmidt_rank = s_rank
         self.qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
-        unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-        self.inputs = generate_data_points(type_of_data=data_type, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
+        if s_rank==0:
+            self.unitary = torch.from_numpy(unitary.reshape(-1,4))
+            self.inputs = torch.from_numpy(inputs.reshape(-1,4,4))
+        else:
+            if(s_rank not in range(1,3) or num_data_points not in range(1,5) or data_type not in range(1,5)):
+                raise Exception("Wrong Schmidt Rank, number of data points or data type")
+            self.unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu") #TODO: auf ein unitary festlegen?
+            self.inputs = generate_data_points(type_of_data=data_type, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=self.unitary, num_qubits=num_qubits)
         self.dimensions = num_qubits * num_layers * 3
-        expected_output = torch.matmul(unitary, self.inputs)
+        expected_output = torch.matmul(self.unitary, self.inputs)
         self.y_true = expected_output.conj()
     def __call__(self, x_in):
         self.qnn.params = torch.tensor(x_in, dtype=torch.float64, requires_grad=True).reshape(self.qnn.params.shape)
@@ -36,7 +47,7 @@ def f(x):
 def get_ASC_function(func):
     def absolute_scalar_curvature(x):
         points = [x.tolist()]
-        result = calc_scalar_curvature_for_function(func, points)
+        result,_,_ = calc_scalar_curvature_for_function(func, points)
         return np.absolute(result[0])
     return absolute_scalar_curvature
 

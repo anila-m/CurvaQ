@@ -81,7 +81,7 @@ def calc_landscape_tasc(function, grid_point_array, r=0):
         point = np.asarray(point)
         #print(f"Calculating for point {j}/{no_of_points}", point.tolist())
         # calculate tasc, tsc, mean absolute sc and mean sc values at this point
-        tasc_landscape[idx],tsc_landscape[idx],mean_asc_landscape[idx], mean_sc_landscape[idx] = calc_several_scalar_curvature_values(function, r, point)
+        tasc_landscape[idx],tsc_landscape[idx],mean_asc_landscape[idx], mean_sc_landscape[idx],sc_summary, grad_summary, hess_summary = calc_several_scalar_curvature_values(function, r, point)
         j += 1
     return tasc_landscape, tsc_landscape, mean_asc_landscape, mean_sc_landscape
 
@@ -229,8 +229,8 @@ def determine_outliers_in_grid(points, values,z_score_threshold=3):
         Outliers are calculated using the Z-Score.
 
         Args:
-            points (array): 2xn array, that defines the points on the grid in each dimension
-            values (array): nxn array, values corresponding to each point on the grid
+            points (array): nxN array, that defines the points on the grid in each dimension (n=dimensions, N=no of points in each dimension)
+            values (array): N^n array, values corresponding to each point on the grid
         
         Return:
             outlier_points (array): points where outlier occurs
@@ -297,7 +297,6 @@ def cost_func_grid_TASC():
     os.makedirs(directory, exist_ok=True)
     file = open(f"{directory}/QNN_cost_3D_grid_N={N}_{date}.json", mode="w")
     json.dump(results, file, indent=4)
-
 
 def plot_all_tasc_grids_from_run0():
     '''
@@ -2211,25 +2210,22 @@ def plot_all_QNN_tasc_grids():
         print("Points", a)
         print("Values", b)
 
-def print_array_summary(array, file=""):
-    if file!="":
-        f = open(file, "a")
-        f.write("summary:\n")
-        f.write("median "+str(np.median(array))+"\n")
-        f.write("mean "+str(np.mean(array))+"\n")
-        f.write("std "+str(np.std(array))+"\n")
-        f.write("variance "+str(np.var(array))+"\n")
-        f.write("max "+str(np.max(array))+"\n")
-        f.write("min "+str(np.min(array))+"\n")
-        f.close()
-    else:
+def get_array_summary(array, print=False):
+    median = np.median(array)
+    mean = np.mean(array)
+    std = np.std(array)
+    variance = np.var(array)
+    max = np.max(array)
+    min = np.min(array)
+    if print:
         print("summary:")
-        print("median", np.median(array))
-        print("mean", np.mean(array))
-        print("std", np.std(array))
-        print("variance", np.var(array))
-        print("max", np.max(array))
-        print("min", np.min(array))
+        print("median", median)
+        print("mean", mean)
+        print("std", std)
+        print("variance", variance)
+        print("max", max)
+        print("min", min)
+    return [median, mean, std, variance, max, min]
 
 def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iteration=0, N=3,plots=False):
     '''
@@ -2246,25 +2242,25 @@ def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iterat
     #print("Grid Points", points.tolist())
     #print("TASC", tasc_landscape.tolist())
     print("TASC")
-    print_array_summary(tasc_landscape)
+    get_array_summary(tasc_landscape)
     outlier_points, outlier_values = determine_outliers_in_grid(points, tasc_landscape)
     print("Outlier Points", outlier_points)
     print("Outlier TASC Values", outlier_values)
     
     print("TSC")
-    print_array_summary(tsc_landscape)
+    get_array_summary(tsc_landscape)
     outlier_points, outlier_values = determine_outliers_in_grid(points, tsc_landscape)
     print("Outlier Points", outlier_points)
     print("Outlier TSC Values", outlier_values)
 
     print("MASC")
-    print_array_summary(masc_landscape)
+    get_array_summary(masc_landscape)
     outlier_points, outlier_values = determine_outliers_in_grid(points, masc_landscape)
     print("Outlier Points", outlier_points)
     print("Outlier MASC Values", outlier_values)
 
     print("MSC")
-    print_array_summary(msc_landscape)
+    get_array_summary(msc_landscape)
     outlier_points, outlier_values = determine_outliers_in_grid(points, msc_landscape)
     print("Outlier Points", outlier_points)
     print("Outlier MSC Values", outlier_values)

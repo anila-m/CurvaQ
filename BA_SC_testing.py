@@ -14,7 +14,7 @@ def plot_function(func, point, radius):
     points = np.ndarray((grid_size**2,2))
     points[:,0] = X.flatten()
     points[:,1] = Y.flatten()
-    sc_values = calc_scalar_curvature_for_function(f,points).reshape(X.shape)
+    sc_values,_,_ = calc_scalar_curvature_for_function(f,points).reshape(X.shape)
     ax = plt.subplot(111, projection='3d')
     ax.plot_surface(X, Y, sc_values, cmap=cm.coolwarm,linewidth=0, antialiased=False)
     ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel='SC')

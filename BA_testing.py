@@ -217,23 +217,26 @@ def plot_rosenbrock_gradient():
 def analyse_rosenbrock_gradient():
     #r_values = [1, 0.1, 0.01, 0.001, 0.0001]
     r_values = [0.01]
-    c= np.asarray([1,1])
+    c= np.asarray([1,1,1,1,1])
     print(f"Analyzing gradient and hessian norm around {c} for 2D Rosenbrock")
     print(f"number of sample points per radius: 100000")
     print("----------------------------")
     maximums = {}
     for r in r_values:
-        sample_points = sample_n_ball_uniform(n=2, r=r, c=c, N=100000)
+        sample_points = sample_n_ball_uniform(n=5, r=r, c=c, N=100)
         gradients = []
         hessians = []
         for point in sample_points:
-            gradients.append(sp.optimize.approx_fprime(point, rosen_projection_to_2d))
-            hessians.append(calc_hessian(rosen_projection_to_2d, point))
+            gradients.append(sp.optimize.approx_fprime(point, rosen))
+            hessians.append(calc_hessian(rosen, point))
         gradients = np.asarray(gradients)
         hessians = np.asarray(hessians)
         print(f"Radius {r}")
         grad_norm = np.linalg.norm(gradients, axis=1)
         hess_norm = np.linalg.norm(hessians, axis=(1,2))
+        print(hessians.shape)
+        print(hess_norm.shape)
+        print(sample_points.shape)
         max_grad = np.max(grad_norm)
         max_hess = np.max(hess_norm)
         print("Gradient Norm")
@@ -356,10 +359,5 @@ if __name__ == "__main__":
     #print(calc_total_absolute_scalar_curvature(rosen,r,c,N=1000))
     #testing_rosenbrock_3D(dim=2)
     #test_rosenbrock_derivatives()
-    point = np.asarray([1.0,1.0])
-    grad = sp.optimize.approx_fprime(point, rosen_projection_to_2d)
-    hess = calc_hessian(rosen_projection_to_2d, point)
-    print("Point", point)
-    print("Gradient norm", np.linalg.norm(grad))
-    print("Hessian norm", np.linalg.norm(hess))
+    analyse_rosenbrock_gradient()
 

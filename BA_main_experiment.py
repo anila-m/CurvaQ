@@ -304,5 +304,5 @@ def single_cost_test():
 
 
 if __name__=="__main__":
-    main_cost_function_experiment(num_qubits=2)
-
+    directory="results/main_experiment/6D_cost"
+    main_cost_function_experiment(num_qubits=2,directory=directory)

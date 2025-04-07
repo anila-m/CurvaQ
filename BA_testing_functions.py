@@ -5,6 +5,7 @@ from classic_training import cost_func
 from data import random_unitary_matrix
 from landscapes import generate_data_points
 from metrics import calc_scalar_curvature_for_function
+from qnns.cuda_qnn import CudaPennylane
 from qnns.qnn import get_qnn
 
 class CostFunction:
@@ -16,13 +17,14 @@ class CostFunction:
         '''
         num_layers = 1
         schmidt_rank = s_rank
-        self.qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
         if s_rank==0:
+            self.qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
             self.unitary = torch.from_numpy(unitary.reshape(-1,4))
             self.inputs = torch.from_numpy(inputs.reshape(-1,4,4))
         else:
             if(s_rank not in range(1,3) or num_data_points not in range(1,5) or data_type not in range(1,5)):
                 raise Exception("Wrong Schmidt Rank, number of data points or data type")
+            self.qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu")
             self.unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu") #TODO: auf ein unitary festlegen?
             self.inputs = generate_data_points(type_of_data=data_type, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=self.unitary, num_qubits=num_qubits)
         self.dimensions = num_qubits * num_layers * 3

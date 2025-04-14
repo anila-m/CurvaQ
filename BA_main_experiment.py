@@ -8,9 +8,9 @@ from BA_curvature_util import get_hypersphere_volume, sample_n_ball_uniform
 from BA_testing_functions import CostFunction
 from BA_grid_TASC import generate_grid_point_array, determine_outliers_in_grid, get_array_summary
 from metrics import calc_fourier_density_and_coefficients, calc_scalar_curvature_for_function
-from BA_experiment_resources import unitary, inputs_list
+from BA_experiment_resources import unitary, inputs_list, unitary_3D
 
-datatype_names = ["random", "orthogonal", "linearly dependent", "variable Schmidt rank"]
+datatype_names = ["random", "orthogonal", "lin. dep.", "var. Schmidt rank"]
 
 class Engine(object):
     def __init__(self, function, r, grid_point_array):
@@ -80,30 +80,35 @@ def main_cost_function_experiment(num_qubits, directory="results/main_experiment
             num_qubits (int): 1 or 2, (3D: 1, 6D: 2)
             directory (String): directory to save json files in, optional.
     '''
+    
     print(f"CPU Count: {os.cpu_count()}")
     if num_qubits<1 or num_qubits>2:
         raise Exception
     s_rank_range = [1,2]
     N=5
+    dim = num_qubits*3
+    no_of_runs = 10
     if num_qubits==2: # case: 6D cost function --> Schmidt rank 3 and 4 also possible
         s_rank_range = [1,2,3,4]
         N=3
-    dim = num_qubits*3
+        no_of_runs = 5
     config_id = 0
     date = datetime.today().strftime('%Y-%m-%d')
     for datatype in range(1,5): # (1=random, 2=orthogonal, 3=linearly dependent in H_x, 4= variable schmidt rank)
         for num_of_data_points in range(1,5):
             for s_rank in s_rank_range:
-                for run_id in range(1,6):
+                # get cost function
+                if num_qubits==1:
+                    unitary_np = np.asarray(unitary_3D, dtype=complex)
+                    cost_func = CostFunction(num_qubits=num_qubits,s_rank=s_rank, num_data_points=num_of_data_points, data_type=datatype, unitary=unitary_np)
+                else:
+                    unitary_np = np.asarray(unitary,dtype=complex)
+                    inputs = np.asarray(inputs_list[config_id],dtype=complex)
+                    cost_func = CostFunction(num_qubits=num_qubits, unitary=unitary_np, inputs=inputs)
+                for run_id in range(1,no_of_runs+1):
                     results_dict = {}
-                    # get cost function
-                    if num_qubits==1:
-                        cost_func = CostFunction(num_qubits=num_qubits,s_rank=s_rank, num_data_points=num_of_data_points, data_type=datatype)
-                    else:
-                        unitary_np = np.asarray(unitary,dtype=complex)
-                        inputs = np.asarray(inputs_list[config_id],dtype=complex)
-                        cost_func = CostFunction(num_qubits=num_qubits, unitary=unitary_np, inputs=inputs)
-                    lowerleft = np.zeros(num_qubits*3)
+                    #lowerleft = np.zeros(num_qubits*3)
+                    lowerleft = np.zeros(dim)
                     stepsize = 2*np.pi/(N-1)
                     # prepare results dictionary for json file
                     results_dict = {"date": str(date), "config ID": config_id, "run ID": run_id, "dimension": dim, "schmidt Rank": s_rank, "number of data points": num_of_data_points, "data type": datatype_names[datatype-1]}
@@ -132,10 +137,102 @@ def main_cost_function_experiment(num_qubits, directory="results/main_experiment
                     json.dump(results_dict, file, indent=4)
                     # logging
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    print(f"{current_time}: Config {config_id} run {run_id}/5 DONE")
+                    print(f"{current_time}: Config {config_id} run {run_id}/{no_of_runs} DONE")
                 config_id += 1
 
-
+def main_cost_function_experiment_from50(directory="results/main_experiment/6D_cost"):
+    '''
+        Same as main_cost_function_experiment, but starting from configuration 50, instead of 0.
+        Only for 6D Cost function (num_qubits=2).
+    '''
+    num_qubits = 2
+    print(f"CPU Count: {os.cpu_count()}")
+    if num_qubits<1 or num_qubits>2:
+        raise Exception
+    s_rank_range = [1,2]
+    N=5
+    dim = num_qubits*3
+    no_of_runs = 10
+    if num_qubits==2: # case: 6D cost function --> Schmidt rank 3 and 4 also possible
+        s_rank_range = [1,2,3,4]
+        N=3
+        no_of_runs = 5
+    config_id = 50
+    date = datetime.today().strftime('%Y-%m-%d')
+    num_of_data_points=1
+    datatype=4
+    for s_rank in [3,4]:
+        # get cost function
+        unitary_np = np.asarray(unitary,dtype=complex)
+        inputs = np.asarray(inputs_list[config_id],dtype=complex)
+        cost_func = CostFunction(num_qubits=num_qubits, unitary=unitary_np, inputs=inputs)
+        for run_id in range(1,no_of_runs+1):
+            results_dict = {}
+            #lowerleft = np.zeros(num_qubits*3)
+            lowerleft = np.zeros(dim)
+            stepsize = 2*np.pi/(N-1)
+            # prepare results dictionary for json file
+            results_dict = {"date": str(date), "config ID": config_id, "run ID": run_id, "dimension": dim, "schmidt Rank": s_rank, "number of data points": num_of_data_points, "data type": datatype_names[datatype-1]}
+            unitary_string = (np.array2string(cost_func.unitary.numpy(), separator=",").replace("\n", "").replace(" ", ""))
+            inputs_string = (np.array2string(cost_func.inputs.numpy(), separator=",").replace("\n", "").replace(" ", ""))
+            results_dict["unitary"] = unitary_string
+            results_dict["inputs"] = inputs_string
+            results_dict["number of grid points"] = N
+            results_dict["stepsize/radius"] = stepsize
+            results_dict["lower left corner of grid"] = lowerleft.tolist()
+            # compute all relevant values (aka perform experiment)
+            results = one_iteration_grid_TASC_parallel1(cost_func, lowerleft, stepsize,N=N)
+            results_dict.update(results)
+            # save as json file
+            filename = f"{dim}D_cost_config_{config_id}_run_{run_id}_{date}.json"
+            os.makedirs(directory, exist_ok=True)
+            file = open(f"{directory}/{filename}", mode="w")
+            json.dump(results_dict, file, indent=4)
+            # logging
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(f"{current_time}: Config {config_id} run {run_id}/{no_of_runs} DONE")
+        config_id += 1
+    for datatype in [4]: # (1=random, 2=orthogonal, 3=linearly dependent in H_x, 4= variable schmidt rank)
+        for num_of_data_points in range(2,5):
+            for s_rank in s_rank_range:
+                # get cost function
+                unitary_np = np.asarray(unitary,dtype=complex)
+                inputs = np.asarray(inputs_list[config_id],dtype=complex)
+                cost_func = CostFunction(num_qubits=num_qubits, unitary=unitary_np, inputs=inputs)
+                for run_id in range(1,no_of_runs+1):
+                    results_dict = {}
+                    #lowerleft = np.zeros(num_qubits*3)
+                    lowerleft = np.zeros(dim)
+                    stepsize = 2*np.pi/(N-1)
+                    # prepare results dictionary for json file
+                    results_dict = {"date": str(date), "config ID": config_id, "run ID": run_id, "dimension": dim, "schmidt Rank": s_rank, "number of data points": num_of_data_points, "data type": datatype_names[datatype-1]}
+                    unitary_string = (
+                        np.array2string(cost_func.unitary.numpy(), separator=",")
+                        .replace("\n", "")
+                        .replace(" ", "")
+                    )
+                    inputs_string = (
+                        np.array2string(cost_func.inputs.numpy(), separator=",")
+                        .replace("\n", "")
+                        .replace(" ", "")
+                    )
+                    results_dict["unitary"] = unitary_string
+                    results_dict["inputs"] = inputs_string
+                    results_dict["number of grid points"] = N
+                    results_dict["stepsize/radius"] = stepsize
+                    results_dict["lower left corner of grid"] = lowerleft.tolist()
+                    # compute all relevant values (aka perform experiment)
+                    results = one_iteration_grid_TASC_parallel1(cost_func, lowerleft, stepsize,N=N)
+                    results_dict.update(results)
+                    # save as json file
+                    filename = f"{dim}D_cost_config_{config_id}_run_{run_id}_{date}.json"
+                    os.makedirs(directory, exist_ok=True)
+                    file = open(f"{directory}/{filename}", mode="w")
+                    json.dump(results_dict, file, indent=4)
+                    # logging
+                    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    print(f"{current_time}: Config {config_id} run {run_id}/{no_of_runs} DONE")
+                config_id += 1
                     
 
 def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
@@ -305,4 +402,4 @@ def single_cost_test():
 
 if __name__=="__main__":
     directory="results/main_experiment/6D_cost"
-    main_cost_function_experiment(num_qubits=2,directory=directory)
+    main_cost_function_experiment_from50(directory=directory)

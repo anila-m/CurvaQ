@@ -84,4 +84,14 @@ def cosine_2D_tasc():
     plt.close()
 
 if __name__=="__main__":
-    cosine_2D_tasc()
+    a = np.mgrid[:5, :5, :5][0]
+    fft = np.fft.fftn(a)
+    #print(fft)
+    shifted_fft = np.fft.fftshift(fft)
+    #print(shifted_fft)
+    unshifted_fft = np.fft.ifftshift(shifted_fft)
+    #print(fft == unshifted_fft)
+
+    index = tuple([0,1,0])
+    print(fft[0][1][0])
+    print(fft[index])

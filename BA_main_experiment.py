@@ -250,7 +250,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # TASC
     results_dict["TASC"] = {"meaning": "total absolute scalar curvature", "tasc landscape": tasc_landscape.tolist()}
     summary = get_array_summary(tasc_landscape)
-    outlier_points, outlier_values = determine_outliers_in_grid(points, tasc_landscape)
+    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, tasc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["TASC"][labels[i]] = float(summary[i])
@@ -260,7 +260,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # TSC
     results_dict["TSC"] = {"meaning": "total scalar curvature", "tsc landscape": tsc_landscape.tolist()}
     summary = get_array_summary(tsc_landscape)
-    outlier_points, outlier_values = determine_outliers_in_grid(points, tsc_landscape)
+    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, tsc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["TSC"][labels[i]] = float(summary[i])
@@ -270,7 +270,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # MASC
     results_dict["MASC"] = {"meaning": "mean absolute scalar curvature", "masc landscape": masc_landscape.tolist()}
     summary = get_array_summary(masc_landscape)
-    outlier_points, outlier_values = determine_outliers_in_grid(points, masc_landscape)
+    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, masc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["MASC"][labels[i]] = float(summary[i])
@@ -280,7 +280,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # MSC
     results_dict["MSC"] = {"meaning": "mean scalar curvature", "msc landscape": msc_landscape.tolist()}
     summary = get_array_summary(msc_landscape)
-    outlier_points, outlier_values = determine_outliers_in_grid(points, msc_landscape)
+    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, msc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["MSC"][labels[i]] = float(summary[i])

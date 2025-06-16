@@ -224,7 +224,6 @@ def make_boxplot(data_dict, y_label, x_label, path, filename, title="",no_outlie
     os.makedirs(f"plots{path}", exist_ok=True)
     plt.savefig(f"plots{path}/{file_name}.pdf", format='pdf',bbox_inches='tight')
 
-
 def outlier_aware_hist(ax, no_bins,data, lower=None, upper=None):
     '''
         Creates an outlier aware histogram, where x-axis is limited between lower and upper, and upper and lower outliers are appended to right and left of Histogram.

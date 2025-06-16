@@ -16,6 +16,7 @@ from BA_analysis_util import make_boxplot
 
 step_size = 0.4
 
+# Several preliminary tests, that were used during initial phase of thesis (i.e. implementation)
 
 def test_uniform_sampling_costFunc():
     r = 1
@@ -173,47 +174,6 @@ def analyse_rosenbrock_gradient():
     return maximums
 
 
-def plot_rosenbrock_SC():
-    file = "results/preliminary_tests/rosenbrock2D_projection_2025-02-12.json"
-    with open(file) as f:
-        d = json.load(f)
-        result = d["822"]
-        sc_values = np.asarray(result["SC values"])
-        sample_points = np.asarray(result["sample points"])
-        X = sample_points[:,0]
-        Y = sample_points[:,1]
-        tasc = float(result["tasc"])
-        max_index = np.argmax(sc_values)
-        max_sample_point = sample_points[max_index]
-        min_index = np.argmin(sc_values)
-        min_sample_point = sample_points[min_index]
-        print("Median", np.median(sc_values), "Mean", float(np.mean(sc_values)), "STD", float(np.std(sc_values)), "Variance", float(np.var(sc_values)))
-        print("Max SC", np.max(sc_values), "Max SC Index", max_index, "Max SC Sample Point", max_sample_point)
-        print("Min SC", np.min(sc_values), "Min SC Index", min_index, "Min SC Sample Point", min_sample_point)
-        ax = plt.subplot(111, projection='3d')
-        ax.scatter(X, Y, sc_values, c=sc_values,cmap="viridis")
-        ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel='SC')
-        plt.title(f"Scalar Curvature of Rosenbrock function for $x_3=1$. TASC = {tasc}")
-        plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_SC.pdf")
-        plt.close()
-        del ax
-        ax = plt.subplot()
-        ax = plt.boxplot(sc_values)
-        plt.title(f"Rosenbrock function for $x_3=1$: Scalar Curvature Boxplot.\nTASC = {tasc}")
-        plt.savefig("plots/preliminary_tests/Rosenbrock_2Dprojection_SC_boxplot.pdf", format="pdf")
-
-        max_values, max_indexes = get_max_N_values(sc_values,10)
-        s1 = "SC"
-        s2 = "Index"
-        s3 ="Sample Point"
-        print(f"{s1:<20}  {s2:<10}  {s3:<30}")
-        for idx in range(len(max_indexes)):
-            sc = max_values[idx]
-            index = max_indexes[idx]
-            sample_point = sample_points[index]
-            print(f"{sc:<20}  {index:<10}  {np.array2string(sample_point):<30}")
-    return 0
-
 def calc_SC(gradient_vector, point_hessian):
     '''
         Helper function: Calculate Scalar Curvature given the first and seconder order derivates (gradient and hessian) at a certain point.
@@ -239,7 +199,6 @@ def calc_SC(gradient_vector, point_hessian):
         )
     point_curv = left_term + right_term
     return point_curv
-
 
 
 def plot_rosenbrock_fun_and_SC(left=0.0, right=2.0):

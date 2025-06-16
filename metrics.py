@@ -3,18 +3,13 @@ import orqviz
 import numpy as np
 import scipy as sp
 from classic_training import cost_func
-#from data import *
-#import numpy as np
-#from utils import *
+
 from utils import *
 from landscapes import *
 from BA_curvature_util import calc_hessian, sample_n_ball_uniform, get_hypersphere_volume
-#from victor_thesis_plots import *
-
-#sampling_methods = {"uniform": sample_n_ball_uniform, "uniform_Voelker": sample_n_ball_uniform_Voelker_method}
 
 # total absolute scalar curvature
-# Alina
+# BA CurvaQ
 def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1000, absolute=True):
     '''
     Calculates the total absolute scalar curvature of a function within a hypersphere of 
@@ -25,12 +20,15 @@ def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1
         r (float): radius of hypersphere, same in every dimension
         c (array): point within loss landscape, center of hypersphere, array with n entries (one for each dimension)
         sampling (String): sampling method, possible values: 
-            "uniform" (uniformly random, Marsaglia method) (default)
-        N (int): number of sample points, default: 1000 #TODO: andere Zahl?
+            "uniform" (uniformly random) (default)
+            [so far no other sampling methods are implemented]
+        N (int): number of sample points, default: 1000 
         absolute (bool): default: True, if False: non absolute scalar curvature values are used
 
     Returns:
         float: total absolute scalar curvature
+        array: list of all scalar curvature values
+        sample points: list of all sample points
     '''
     dimensions = len(c)
     # get sample points within hypersphere
@@ -47,7 +45,7 @@ def calc_total_absolute_scalar_curvature(function, r, c, sampling="uniform", N=1
     total_absolute_sc = total_absolute_sc * hypersphere_volume/N
     return np.round(total_absolute_sc, 3), scalar_curvature_landscape, sample_points
 
-
+# BA CurvaQ
 def calc_several_scalar_curvature_values(function, r, c, N=1000, absolute=True):
     '''
     Calculates the total (absolute) scalar curvature and mean (absolute) scalar curvature
@@ -72,7 +70,7 @@ def calc_several_scalar_curvature_values(function, r, c, N=1000, absolute=True):
     '''
     dimensions = len(c)
     # get sample points within hypersphere
-    sample_points = sample_n_ball_uniform(dimensions, r, c, N) #TODO: wenn andere sampling Methoden implementiert wurden erweitern
+    sample_points = sample_n_ball_uniform(dimensions, r, c, N)
     scalar_curvature_landscape, grad_summary, hess_summary = calc_scalar_curvature_for_function(function, sample_points)
     sc_summary = [np.median(scalar_curvature_landscape), np.mean(scalar_curvature_landscape), np.min(scalar_curvature_landscape), np.max(scalar_curvature_landscape)]
     # calculate total (absolute) scalar curvature
@@ -90,7 +88,7 @@ def calc_several_scalar_curvature_values(function, r, c, N=1000, absolute=True):
     return np.round(total_absolute_sc,3), np.round(total_sc,3), np.round(mean_asc,3), np.round(mean_sc,3), sc_summary, grad_summary, hess_summary
 
 # n-dimensional scalar curvature, for an objective function and a list of points, not "just" a landscape
-# Alina
+# BA CurvaQ
 def calc_scalar_curvature_for_function(function, sample_points):
     """calculates the scalar curvature of a function at different points
     instead of calculating the whole n dimensional curvature array (same size as the input landscape)

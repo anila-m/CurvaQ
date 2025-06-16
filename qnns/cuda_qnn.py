@@ -179,7 +179,7 @@ class UnitaryParametrization(CudaQNN):
         return self.qnn()
 
 
-class CudaPennylane(CudaQNN):
+class CudaPennylane(CudaQNN): #BA: falls num_qubits = num_wires = 1: ein U3 gate
 
     def __init__(self, num_wires, num_layers: int, device="cpu"):
         super(CudaPennylane, self).__init__(num_wires, num_layers, device)
@@ -212,7 +212,7 @@ class CudaPennylane(CudaQNN):
         # return Variable(torch.tensor(params, device=self.device), requires_grad=True)
         return torch.tensor(params, device=self.device, requires_grad=True)
 
-    def layer(self, layer_num):
+    def layer(self, layer_num): 
         result = qg.U3(
             self.params[0, layer_num, 0],
             self.params[0, layer_num, 1],
@@ -243,7 +243,7 @@ class CudaPennylane(CudaQNN):
         return result
 
 
-class CudaU2(CudaQNN):
+class CudaU2(CudaQNN): # BA: num_qubits = num_wires = 1: ein U2 Gate
 
     def __init__(self, num_wires, num_layers: int, device="cpu"):
         super(CudaU2, self).__init__(num_wires, num_layers, device)
@@ -266,18 +266,19 @@ class CudaU2(CudaQNN):
             )
 
     def init_params(self):
-        depth = self.num_wires + 3
-        depth *= self.num_layers
-        std_dev = np.sqrt(1 / depth)
+        depth = self.num_wires + 3 #BA: 1+3 = 4
+        depth *= self.num_layers #BA: 4*1 = 4
+        std_dev = np.sqrt(1 / depth) # BA: sqrt(1/4) = 1/2
         # std_dev = np.pi
         # 3 Parameters per qbit per layer, since we have a parameterised X, Y, Z rotation
+        # BA: warum nicht 2 Parameter pro qubit? Parametrisierte X,Y Rotation?
 
         params = np.random.normal(0, std_dev, (self.num_wires, self.num_layers, 3))
         # return Variable(torch.tensor(params, device=self.device), requires_grad=True)
         return torch.tensor(params, device=self.device, requires_grad=True)
 
     def layer(self, layer_num):
-        result = qg.U2(self.params[0, layer_num, 0], self.params[0, layer_num, 1])
+        result = qg.U2(self.params[0, layer_num, 0], self.params[0, layer_num, 1]) #BA: man ignoriert den dritten Parameter einfach?
         for i in range(1, self.num_wires):
             result = torch.kron(
                 result,
@@ -664,7 +665,7 @@ class CudaComplexPennylane(CudaQNN):
         return result
 
 
-class CudaSimpleEnt(CudaQNN):
+class CudaSimpleEnt(CudaQNN): # BA: Falls num_qubits = num_wires = 1: gleich wie CudaPennyLane
 
     def __init__(self, num_wires, num_layers: int, device="cpu"):
         super(CudaSimpleEnt, self).__init__(num_wires, num_layers, device)
@@ -672,7 +673,7 @@ class CudaSimpleEnt(CudaQNN):
         self.matrix_size = (2**self.num_wires, 2**self.num_wires)
 
     def init_entanglement_layers(self):
-        if self.num_wires > 1:
+        if self.num_wires > 1: # BA: bei num_qubits = 1 nicht relevant
             ent_layers = []
 
             def ent_layer():
@@ -710,7 +711,7 @@ class CudaSimpleEnt(CudaQNN):
             self.params[0, layer_num, 2],
         )
         for i in range(1, self.num_wires):
-            result = torch.kron(
+            result = torch.kron( #Kronecker Produkt
                 result,
                 qg.U3(
                     self.params[i, layer_num, 0],

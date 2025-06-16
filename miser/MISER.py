@@ -5,7 +5,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
-import pdb
 # Author: Karolina Oksanen
 # Github: https://github.com/karoliina/MISER
 

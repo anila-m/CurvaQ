@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from scipy.optimize import rosen
 
 from classic_training import cost_func
 from data import random_unitary_matrix
@@ -8,12 +9,20 @@ from metrics import calc_scalar_curvature_for_function
 from qnns.cuda_qnn import CudaPennylane, CudaSimpleEnt
 from qnns.qnn import get_qnn
 
+
 class CostFunction:
     def __init__(self,*, num_qubits=1, s_rank=0, num_data_points=0, data_type=0,unitary=None,inputs=None):
         '''
+            Initializes QNN cost function based on unitary or inputs (training data), if unitary is None it is generated randomly,
+            if inputs is None, Training data is generated from given Schmidt rank (s_rank), number of samples (num_data_points) and data type (data_type)
+            
             Args:
-                unitary: numpy array of values (not torch.tensor)
-                inputs: numpy array of values (not torch.tensor)
+                num_qubits (int): number of qubits in QNN PQC, default: 1, 
+                s_rank (int): Schmidt rank of training samples, between 1 and 2 for 1-qubit QNN, default: 0, 
+                num_data_points (int): Number of training samples, between 1 and 4, default: 0, 
+                data_type (int): data type of training samples, between 1 and 4, default: 0,
+                unitary: numpy array of values (not torch.tensor), default: None
+                inputs: numpy array of values (not torch.tensor), default: None
         '''
         num_layers = 1
         schmidt_rank = s_rank
@@ -39,67 +48,37 @@ class CostFunction:
         cost = cost_func(self.inputs, self.y_true, self.qnn, device="cpu") 
         return cost.item()
 
+k=2
 def cosine_2D(x):
+    '''
+        Test function for thesis chapter "Curvature". f(x,y) = 1/(2^k)*(cos(2^k*x)+cos(2^k*y)), k=2
+    '''
     if len(x) != 2:
         raise Exception
-    Z = (1/2) * (np.cos(2 * x[0]) + np.cos(2 * x[1]))
+    Z = (1/2**k) * (np.cos(2**k * x[0]) + np.cos(2**k * x[1]))
     return Z
 
-def f(x):
-    if x.shape[0] != 2:
-        raise Exception("Input has to have length of 2.")
-    return x[0]**2 - x[1]**2
+def rosen_projection_to_2d(x):
+    '''
+        Reduction of Rosenbrock function to 2D, by setting last input x_3 to 1. 
+        Args:
+            x (list): input values
+        Returns:
+            Rosen(x,1)
+    '''
+    y = np.append(x,1)
+    return rosen(y)
 
-def get_ASC_function(func):
+def get_ASC_function(func, absolute=True):
+    '''
+        Function that computes absolute scalar curvature for func.
+    '''
     def absolute_scalar_curvature(x):
         points = [x.tolist()]
         result,_,_ = calc_scalar_curvature_for_function(func, points)
-        return np.absolute(result[0])
+        if absolute:
+            return np.absolute(result[0])
+        else:
+            return result[0]
     return absolute_scalar_curvature
 
-
-def get_basic_3D_cost_function(s_rank=1, ndp=1,type_of_data =1):
-    '''
-        deprecated, but may be in use somewhere, so it's staying for now.
-    '''
-    num_qubits = 1
-    num_layers = 1
-    
-    num_data_points = ndp
-
-    schmidt_rank = s_rank
-    qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-    inputs = generate_data_points(type_of_data=type_of_data, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
-    dimensions = num_qubits * num_layers * 3
-    x = inputs
-    expected_output = torch.matmul(unitary, x)
-    y_true = expected_output.conj()
-    def cost_function(x_in):
-        qnn.params = torch.tensor(x_in, dtype=torch.float64, requires_grad=True).reshape(qnn.params.shape)
-        cost = cost_func(inputs, y_true, qnn, device="cpu") 
-        return cost.item()
-    return cost_function
-
-def get_basic_6D_cost_function(s_rank=1, ndp=1,type_of_data =1):
-    '''
-        deprecated, but may be in use somewhere, so it's staying for now.
-    '''
-    num_qubits = 2
-    num_layers = 1
-    
-    num_data_points = ndp
-
-    schmidt_rank = s_rank
-    qnn = get_qnn("CudaU2", list(range(num_qubits)), num_layers, device="cpu") #FP: qnn = CudaPennylane(num_wires=num_qubits, num_layers=num_layers, device="cpu") 
-    unitary = torch.tensor(data=np.array(random_unitary_matrix(num_qubits)), dtype=torch.complex128, device="cpu")
-    inputs = generate_data_points(type_of_data=type_of_data, schmidt_rank=schmidt_rank, num_data_points=num_data_points, U=unitary, num_qubits=num_qubits)
-    dimensions = num_qubits * num_layers * 3
-    x = inputs
-    expected_output = torch.matmul(unitary, x)
-    y_true = expected_output.conj()
-    def cost_function(x_in):
-        qnn.params = torch.tensor(x_in, dtype=torch.float64, requires_grad=True).reshape(qnn.params.shape)
-        cost = cost_func(inputs, y_true, qnn, device="cpu") 
-        return cost.item()
-    return cost_function

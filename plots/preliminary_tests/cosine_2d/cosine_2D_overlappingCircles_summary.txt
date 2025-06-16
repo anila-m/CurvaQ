@@ -1,0 +1,18 @@
+TASC landscape summary for small cube (-pi/2, pi/2)^2
+summary:
+median 2.977
+mean 2.7768765432098763
+std 0.757333763411394
+variance 0.5735544292028654
+max 3.493
+min 1.271
+
+
+
+small cube TASC vs TSC (-pi/2, pi/2)^2:
+
+TASC: 55.6322996579096 
+TSC: -0.3416103518664223
+
+
+big cube TASC vs TSC (-pi, pi)^2:

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from miser.RandomNumberGenerators import Ran
-import pdb
+
 # Author: Karolina Oksanen
 # Github: https://github.com/karoliina/MISER
 

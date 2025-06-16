@@ -1,0 +1,11 @@
+Attribute: s_rank
+s_rank = 1:     Mean = 9.42, Median = 7.81, STD = 5.67
+s_rank = 2:     Mean = 7.67 -18.58%, Median = 6.68 -14.47%, STD = 2.97 -47.62%
+
+Attribute: number_of_data_points
+number_of_data_points = 1:     Mean = 11.69, Median = 11.91, STD = 4.66
+number_of_data_points = 2:     Mean = 6.6 -43.54%, Median = 5.33 -55.25%, STD = 4.38 -6.01%
+number_of_data_points = 3:     Mean = 9.49 --43.79%, Median = 9.14 --71.48%, STD = 4.11 -6.16%
+number_of_data_points = 4:     Mean = 6.4 -32.56%, Median = 5.12 -43.98%, STD = 2.84 -30.9%
+
+--> no consistent trend

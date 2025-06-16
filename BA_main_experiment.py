@@ -33,18 +33,17 @@ class Engine(object):
         #return idx, tasc, tsc, masc, msc
 
 
-def calc_several_scalar_curvature_values_parallel1(function, r, c, idx, N=1000, absolute=True):
+def calc_several_scalar_curvature_values_parallel1(function, r, c, idx, N=1000):
     '''
     Calculates the total (absolute) scalar curvature and mean (absolute) scalar curvature
     of a function within a hypersphere of radius r around a center point c.
 
     Args:
-        function (array): function 
+        function (callable): function 
         r (float): radius of hypersphere, same in every dimension
         c (array): point within loss landscape, center of hypersphere, array with n entries (one for each dimension)
-        sampling (String): sampling method, possible values: 
-            "uniform" (uniformly random, Marsaglia method) (default)
-        N (int): number of sample points, default: 1000 #TODO: andere Zahl?
+        idx (list): idx of center c in grid
+        N (int): number of sample points, default: 1000 
 
     Returns:
         float: total absolute scalar curvature
@@ -54,7 +53,7 @@ def calc_several_scalar_curvature_values_parallel1(function, r, c, idx, N=1000, 
     '''
     dimensions = len(c)
     # get sample points within hypersphere
-    sample_points = sample_n_ball_uniform(dimensions, r, c, N) #TODO: wenn andere sampling Methoden implementiert wurden erweitern
+    sample_points = sample_n_ball_uniform(dimensions, r, c, N)
     scalar_curvature_landscape, grad_summary, hess_summary = calc_scalar_curvature_for_function(function, sample_points)
     sc_summary = [float(np.median(scalar_curvature_landscape)), float(np.mean(scalar_curvature_landscape)), float(np.min(scalar_curvature_landscape)), float(np.max(scalar_curvature_landscape))]
     asc_summary = [float(np.median(np.absolute(scalar_curvature_landscape))), float(np.mean(np.absolute(scalar_curvature_landscape))), float(np.min(np.absolute(scalar_curvature_landscape))), float(np.max(np.absolute(scalar_curvature_landscape)))]
@@ -78,7 +77,7 @@ def main_cost_function_experiment(num_qubits, directory="results/main_experiment
 
         Args:
             num_qubits (int): 1 or 2, (3D: 1, 6D: 2)
-            directory (String): directory to save json files in, optional.
+            directory (String): directory to save json files in, optional, default: "results/main_experiment/6D_cost"
     '''
     
     print(f"CPU Count: {os.cpu_count()}")
@@ -144,6 +143,9 @@ def main_cost_function_experiment_from50(directory="results/main_experiment/6D_c
     '''
         Same as main_cost_function_experiment, but starting from configuration 50, instead of 0.
         Only for 6D Cost function (num_qubits=2).
+
+        Args:
+            directory (String): directory to save json files in, optional, default: "results/main_experiment/6D_cost"
     '''
     num_qubits = 2
     print(f"CPU Count: {os.cpu_count()}")
@@ -238,6 +240,14 @@ def main_cost_function_experiment_from50(directory="results/main_experiment/6D_c
 def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     '''
         Calculates TASC of a function for every point on a grid and outputs corresponding information, such as outliers and plots.
+
+        Args:
+            function (callable): function
+            lowerleft (list): lower left point of grid
+            stepsize (float): stepsize in grid
+            N (int): number of sample points
+        Returns
+            dict: dictionary of results (for json file)
     '''
     results_dict = {} # info: runid, config id, schmidt rank, ndp, datatype, evtl nicht hier einfügen, sondern davor/übergeordnete Funktion
     start = time.time()
@@ -250,7 +260,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # TASC
     results_dict["TASC"] = {"meaning": "total absolute scalar curvature", "tasc landscape": tasc_landscape.tolist()}
     summary = get_array_summary(tasc_landscape)
-    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, tasc_landscape)
+    outlier_points, outlier_values, _,_,_ = determine_outliers_in_grid(points, tasc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["TASC"][labels[i]] = float(summary[i])
@@ -260,7 +270,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # TSC
     results_dict["TSC"] = {"meaning": "total scalar curvature", "tsc landscape": tsc_landscape.tolist()}
     summary = get_array_summary(tsc_landscape)
-    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, tsc_landscape)
+    outlier_points, outlier_values, _,_,_ = determine_outliers_in_grid(points, tsc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["TSC"][labels[i]] = float(summary[i])
@@ -270,7 +280,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # MASC
     results_dict["MASC"] = {"meaning": "mean absolute scalar curvature", "masc landscape": masc_landscape.tolist()}
     summary = get_array_summary(masc_landscape)
-    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, masc_landscape)
+    outlier_points, outlier_values, _,_,_ = determine_outliers_in_grid(points, masc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["MASC"][labels[i]] = float(summary[i])
@@ -280,7 +290,7 @@ def one_iteration_grid_TASC_parallel1(function, lower_left, stepsize,N):
     # MSC
     results_dict["MSC"] = {"meaning": "mean scalar curvature", "msc landscape": msc_landscape.tolist()}
     summary = get_array_summary(msc_landscape)
-    outlier_points, outlier_values, _ = determine_outliers_in_grid(points, msc_landscape)
+    outlier_points, outlier_values, _,_,_ = determine_outliers_in_grid(points, msc_landscape)
     labels = ["median", "mean", "std", "variance", "max", "min"]
     for i in range(len(labels)):
         results_dict["MSC"][labels[i]] = float(summary[i])
@@ -335,6 +345,15 @@ def calc_landscape_tasc_parallel1(function, grid_point_array, r=0):
 
         Results:
             tasc_landscape (array): calculated tasc value at every point in the given grid
+            tsc_landscape (array): calculated tsc value at every point in the given grid, 
+            mean_asc_landscape (array): calculated masc value at every point in the given grid, 
+            mean_sc_landscape (array): calculated msc value at every point in the given grid, 
+            fd (float): fourier density of landscape, 
+            fcoeff (list): list of fourier coefficients, 
+            asc_landscape (array): summary of absolute sc values at every point in the given grid, 
+            sc_landscape (array): summary of sc values at every point in the given grid, 
+            grad_landscape (array): summary of gradient norm (eucliden) values at every point in the given grid, 
+            hess_landscape (array): summary of hessian norm (frobenius) values at every point in the given grid
     '''
     if grid_point_array.shape[0] == 0:
         raise Exception("grid has to contain at least two points.")
@@ -379,27 +398,8 @@ def calc_landscape_tasc_parallel1(function, grid_point_array, r=0):
     fd, fcoeff = calc_fourier_density_and_coefficients(cost_landscape)
     return tasc_landscape, tsc_landscape, mean_asc_landscape, mean_sc_landscape, fd, fcoeff, asc_landscape, sc_landscape, grad_landscape, hess_landscape
 
-def single_cost_test():
-    num_qubits = 1
-    s_rank = 2
-    ndp = 2
-    data_type = 4
-    cost_func = CostFunction(num_qubits=num_qubits,s_rank=s_rank, num_data_points=ndp, data_type=data_type)
-    ll = np.zeros(num_qubits*3)
-    N=2
-    stepsize = 2*np.pi/(N-1)
-    print("--------------------------------------------")
-    print("NO CONCURRENCY")
-    print("--------------------------------------------")
-    #one_iteration_grid_TASC(cost_func, lower_left=ll, stepsize=stepsize, N=5)
-    print("Time (hours) ...")
-    print("--------------------------------------------")
-    print("WITH CONCURRENCY")
-    print("--------------------------------------------")
-    one_iteration_grid_TASC_parallel1(cost_func,lower_left=ll,stepsize=stepsize,N=N, info=f"N={N}, dim={num_qubits*3}, s_rank={s_rank}, num_data_points={ndp}, data_type={data_type}")
-
-
 
 if __name__=="__main__":
     directory="results/main_experiment/6D_cost"
-    main_cost_function_experiment_from50(directory=directory)
+    #main_cost_function_experiment_from50(directory=directory)
+    main_cost_function_experiment(directory=directory)

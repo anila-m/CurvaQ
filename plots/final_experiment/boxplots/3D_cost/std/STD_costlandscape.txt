@@ -1,0 +1,15 @@
+Summary of std of TASC of Cost Landscape per values of s_rank
+s_rank = 1:     Mean = 53.857, Median = 46.553, STD = 23.677
+s_rank = 2:     Mean = 45.511 -15.5%, Median = 32.951 -29.2%, STD = 30.788 --30.0%
+
+Summary of std of TASC of Cost Landscape per values of number_of_data_points
+number_of_data_points = 1:     Mean = 58.9, Median = 41.8, STD = 33.6
+number_of_data_points = 2:     Mean = 37.4 -36.5%, Median = 33.0 -21.1%, STD = 17.3 -48.5%
+number_of_data_points = 3:     Mean = 62.1 --66.0%, Median = 63.8 --93.3%, STD = 30.8 --78.0%
+number_of_data_points = 4:     Mean = 40.3 -35.1%, Median = 39.0 -38.9%, STD = 15.2 -50.6%
+
+Summary of std of TASC of Cost Landscape per values of datatype
+datatype = random:     Mean = 46.099, Median = 37.721, STD = 32.952
+datatype = orthogonal:     Mean = 57.164 --24.0%, Median = 55.639 --47.5%, STD = 27.523 -16.5%
+datatype = lin. dep.:     Mean = 50.221 -12.1%, Median = 38.825 -30.2%, STD = 23.807 -13.5%
+datatype = var. Schmidt rank:     Mean = 45.252 -9.9%, Median = 37.264 -4.0%, STD = 24.243 --1.8%

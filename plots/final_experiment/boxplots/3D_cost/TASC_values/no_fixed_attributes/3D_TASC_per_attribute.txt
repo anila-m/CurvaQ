@@ -1,0 +1,15 @@
+Attribute: s_rank
+s_rank = 1:     Mean = 159.0, Median = 143.0, STD = 80.0
+s_rank = 2:     Mean = 126.0 -20.8%, Median = 107.0 -25.2%, STD = 77.0 -3.8%
+
+Attribute: number_of_data_points
+number_of_data_points = 1:     Mean = 200.0, Median = 179.0, STD = 107.0
+number_of_data_points = 2:     Mean = 113.0 -43.5%, Median = 102.0 -43.0%, STD = 51.0 -52.3%
+number_of_data_points = 3:     Mean = 160.0 --41.6%, Median = 155.0 --52.0%, STD = 64.0 --25.5%
+number_of_data_points = 4:     Mean = 98.0 -38.8%, Median = 92.0 -40.6%, STD = 36.0 -43.8%
+
+Attribute: datatype
+datatype = random:     Mean = 141.0, Median = 120.0, STD = 85.0
+datatype = orthogonal:     Mean = 155.0 --9.9%, Median = 141.0 --17.5%, STD = 81.0 -4.7%
+datatype = lin. dep.:     Mean = 142.0 -8.4%, Median = 116.0 -17.7%, STD = 79.0 -2.5%
+datatype = var. Schmidt rank:     Mean = 133.0 -6.3%, Median = 112.0 -3.4%, STD = 75.0 -5.1%

@@ -1,0 +1,11 @@
+Attribute: s_rank
+s_rank = 1:     Mean = 3.85, Median = 3.99, STD = 2.22
+s_rank = 2:     Mean = 3.19 -17.14%, Median = 2.72 -31.83%, STD = 1.14 -48.65%
+s_rank = 3:     Mean = 3.34 --4.7%, Median = 2.94 --8.09%, STD = 1.32 --15.79%
+s_rank = 4:     Mean = 3.37 --0.9%, Median = 3.2 --8.84%, STD = 1.04 -21.21%
+
+Attribute: number_of_data_points
+number_of_data_points = 1:     Mean = 4.36, Median = 3.73, STD = 2.09
+number_of_data_points = 2:     Mean = 3.52 -19.27%, Median = 3.66 -1.88%, STD = 1.2 -42.58%
+number_of_data_points = 3:     Mean = 3.09 -12.22%, Median = 2.66 -27.32%, STD = 1.07 -10.83%
+number_of_data_points = 4:     Mean = 2.81 -9.06%, Median = 2.55 -4.14%, STD = 1.05 -1.87%

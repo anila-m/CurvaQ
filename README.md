@@ -1,64 +1,50 @@
-# Toolbox: Total Absolute Scalar Curvature
-This toolbox was implemented during a student research project in 2024. It provides tools to analyze loss landscapes by combining metrics, ansatz characteristics and ZX-calculus.
-This fork of the original toolbox also contains the metric total absolute scalar curvature. 
+# CurvaQ: Total Absolute Scalar Curvature for Cost Landscapes
+Experiment/Code for reproduction of results for Bachelor Thesis "Integrating Curavture into the Cost Landscape of Variational Quantum Algorithms" by Alina Mürwald (2025). The code is adapted from a student research project "QML Toolbox" (2024).
+
+It implements Total Absolute Scalar Curvature (TASC) and contains an experiment with 3D and 6D QNN cost landscapes.
+
+## Directory
+
+Files that start with `BA_` were made for this project. All other files were already part of  "QML Toolbox".
+
+TASC is implemented using Naive Monte Carlo (MC) Integration in `metrics.py`, all TASC associated functions are indicated by `#BA CurvaQ` in that file.
+
+The implementation of MISER (Variant of MC Integration) was taken from here: https://github.com/karoliina/MISER
+
+The main experiment method is contained in `BA_main_experiment.py`. 
+
+Results of the final experiment (used in thesis) can be found in results/main_experiment.
+
+Results for the preliminary tests regarding different MC Integration variants (Naive and MISER) and numbers of samples points can be found in results/preliminary_tests.
+
+All plots can be found in the folder `plots`.
+
 
 ## Dependencies
 The code contained in this repository requires the following dependencies:
-- matplotlib==3.5.2
+- matplotlib==3.8.0
 - networkx==2.8.8
-- numpy==1.24.1
-- orqviz==0.5.0
+- numpy==1.26.4
+- orqviz==0.6.0
 - PennyLane==0.27.0
-- scipy==1.13.1
-- torch==2.2.0
+- scipy==1.15.1
+- torch==2.3.1
 - cirq==0.13.1
 - pyquil==3.0.1
 - qiskit==1.2.4
 - qiskit-aer==0.14.1
-- tensorflow==2.15.0
-- Flask==2.1.2
-- flask-smorest==0.39.0
+- tensorflow==2.18.0
+- Flask==3.1.0
+- flask-smorest==0.45.0
 - ply==3.11
-- qiskit_qasm3_import
+- qiskit_qasm3_import==0.5.1
 - marshmallow~=3.23.1
 - sympy~=1.13.3
 - tqdm~=4.67.0
 
-Install dependencies using ``pip install -r requirements.txt``  
-Python 3.9.13 is the version compatible with the dependencies.
+Install dependencies using ``pip install -r requirements.txt``.  
 
-## Docker
-Steps to be performed to run the application using docker.
-
-> Prerequisites: Installed docker and docker compose.
-  On Windows you can easily install Docker Desktop, which includes both.
-
-Start the corresponding container by executing:
-```
-docker compose up
-```
-
-If changes were made, execute:
-```
-docker compose up --build
-```
-
-To forward port 8000 of the container to port 8000 of your host computer, run:
-```
-docker run -p 8000:8000 qmltoolbox
-```
-
-The OpenAPI documentation can be accessed at ``http://localhost:8000/api/swagger-ui``
-
-## ZX-calculus
-
-
-* `circuitName` must be one of: `introExample`, `iqpExample`, `sim1`, `sim2`, `sim9`, `sim10`, `sim11`, `sim12`, `sim15`, `iqp1`, `iqp2`, `iqp3`. Here, `introExample` and `iqpExample` are the example circuits we discuss in Sections 5.4.1 and 5.5.4 respectively.
-
-* `pauliString` represents the measurement Hamiltonian, for example `ZXIIYX`. Should have length `numQubits`.
-
-* `parameterIdx` is the parameter with regards to which the derivative is analysed. Counting starts at 0.
-
+The experiments were run on Python 3.11.7.
 
 ## Disclaimer of Warranty
 Unless required by applicable law or agreed to in writing, 

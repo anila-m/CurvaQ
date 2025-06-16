@@ -1,4 +1,4 @@
-import sys
+
 # Author: Karolina Oksanen
 # Github: https://github.com/karoliina/MISER
 

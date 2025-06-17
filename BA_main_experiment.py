@@ -400,6 +400,6 @@ def calc_landscape_tasc_parallel1(function, grid_point_array, r=0):
 
 
 if __name__=="__main__":
-    directory="results/main_experiment/6D_cost"
-    #main_cost_function_experiment_from50(directory=directory)
-    main_cost_function_experiment(directory=directory)
+    # example experiment for 3D cost functions
+    directory="results/main_experiment/3D_cost"
+    main_cost_function_experiment(num_qubits=1, directory=directory)

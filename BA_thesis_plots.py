@@ -4,7 +4,8 @@ import pandas as pd
 from sklearn import preprocessing
 
 from matplotlib import cm
-from BA_grid_TASC import calc_landscape_tasc, get_array_summary, plot_2D_overlapping_circles, generate_grid_point_array
+from BA_grid_TASC import calc_landscape_tasc, get_array_summary, generate_grid_point_array
+from BA_analysis_util import plot_2D_overlapping_circles
 from metrics import *
 from BA_testing_functions import cosine_2D, get_ASC_function
 from BA_miser_test import integrate_cube_MC
@@ -78,7 +79,7 @@ def cosine_2D_critical_points_plot():
                 saddle_x.extend([point_x, -point_x, point_x, -point_x])
                 saddle_y.extend([point_y, point_y, -point_y, -point_y])
     # determine SC values 
-    grid_size = 100 # in total 1000x1000 points on regular grid
+    grid_size = 1000 # in total 1000x1000 points on regular grid
     x = np.linspace(-np.pi/2,np.pi/2,grid_size)
     X,Y = np.meshgrid(x,x)
     points = np.ndarray((grid_size**2,2))
@@ -110,7 +111,6 @@ def cosine_2D_critical_points_plot():
            ncol=3,
            fontsize=13)
     plt.tight_layout()
-    #plt.savefig("plots/preliminary_tests/cosine_2D_criticalPointsSC.png",dpi=dpi_number)
     plt.savefig("plots/preliminary_tests/cosine_2D_criticalPointsSC.pdf", format='pdf')
     
 def cosine_2D_overlappingCircles_tasc():
@@ -127,7 +127,7 @@ def cosine_2D_overlappingCircles_tasc():
     ticklabels = ["$-\pi/2$", "$-\pi/4$", "$0$", "$\pi/4$", "$\pi/2$"]
     ticks = [-np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2]
     plot_2D_overlapping_circles(grid_point_array, tasc_landscape, label, "", filename, ticklabels=ticklabels,ticks=ticks, cosine=True)
-    print("TASC landsacpe summary")
+    print("TASC landscape summary")
     get_array_summary(tasc_landscape,printSummary=True)
 
 def make_f_plots_for_thesis():
@@ -175,163 +175,9 @@ def plot_basic_loss_landscape():
     plt.savefig(f"{filepath}.pdf", bbox_inches = "tight", transparent=True)
     plt.close()
 
-# Helper Functions for plots
-
-def plot_2D_surface(points, values, label, title, file_name):
-    '''
-        Surface plot of values on a 2D grid (defined by points). 
-
-        Args:
-            points (array): 2xn array, that defines the points on the grid in each dimension
-            values (array): nxn array, values corresponding to each point on the grid
-            label (String): z-label in plot
-            title (String): title for plot
-            file_name (String): file name
-    '''
-    X,Y = np.meshgrid(points[0,:], points[1,:])
-    ax = plt.subplot(111, projection='3d')
-    ax.plot_surface(Y, X, values, rstride=1, cstride=1, cmap=cm.viridis, linewidth=0.1) #switch Y and X, since that's how our TASC value landscapes are computed
-    ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel=label)
-    plt.title(title)
-    plt.savefig(f"plots/preliminary_tests/{file_name}.png", format='pdf')
-    plt.close()
-
-def plot_2D_overlapping_circles(points, values, label, title, file_name, ticklabels=[], ticks=[], cosine=False):
-    '''
-        Surface plot of values on a 2D grid (defined by points). 
-
-        Args:
-            points (array): 2xn array, that defines the points on the grid in each dimension
-            values (array): nxn array, values corresponding to each point on the grid
-            label (String): z-label in plot
-            title (String): title for plot
-            file_name (String): file name
-    '''
-    X,Y = np.meshgrid(points[0,:], points[1,:])
-    df = pd.DataFrame({'X': Y.flatten(), #switching Y and X since that's how our value landscapes are computed
-                   'Y':X.flatten(), 
-                   'Z':values.flatten()})
-    
-    # get the Colour
-    x              = df.values
-    min_max_scaler = preprocessing.MinMaxScaler()
-    x_scaled       = min_max_scaler.fit_transform(x)
-    df_S           = pd.DataFrame(x_scaled)
-    c1             = df['Z']
-    c2             = df_S[2]
-    colors         = [cm.viridis(color) for color in c2]
-
-    #determine radius of circles
-    r = points[0,1]-points[0,0]
-
-    # Plot circles
-    plt.figure(figsize=(8,6))
-    plt.grid()
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-    for a, b, color in zip(df['X'], df['Y'], colors):
-        circle = plt.Circle((a, 
-                            b), 
-                            radius=r, # radius
-                            color=color, 
-                            fill=True,
-                            alpha=0.5)
-        ax.add_artist(circle)
-
-    plt.xlim([np.min(points[0])-r,np.max(points[0])+r])
-    plt.ylim([np.min(points[1])-r,np.max(points[1])+r])
-    if len(ticks)>0 and len(ticklabels)>0:
-        plt.xticks(ticks=ticks, labels=ticklabels)
-        plt.yticks(ticks=ticks, labels=ticklabels)
-    #plt.xlabel('$x$', fontsize=14)
-    #plt.ylabel('$y$', fontsize=14)
-    ax.set_aspect(1.0)
-
-    sc = plt.scatter(df['X'], df['Y'], s=0, c=c1, cmap='viridis', facecolors='none')
-
-    cbar = plt.colorbar(sc)
-    cbar.set_label(label, labelpad=10, fontsize=14)
-
-    # if the values belong to the cosine_2D function used for thesis (as an example): also plot critical points
-    if cosine:
-        minima_x, minima_y = [], []
-        maxima_x, maxima_y = [], []
-        saddle_x, saddle_y = [], []
-        for i in range(3):
-            for j in range(3):
-                point_x = i*np.pi/4
-                point_y = j*np.pi/4
-                if i%2==0 and j%2 == 0:
-                    maxima_x.extend([point_x, -point_x, point_x, -point_x])
-                    maxima_y.extend([point_y, point_y, -point_y, -point_y])
-                elif i%2==1 and j%2==1:
-                    minima_x.extend([point_x, -point_x, point_x, -point_x])
-                    minima_y.extend([point_y, point_y, -point_y, -point_y])
-                else:
-                    saddle_x.extend([point_x, -point_x, point_x, -point_x])
-                    saddle_y.extend([point_y, point_y, -point_y, -point_y])
-        min = plt.scatter(minima_x, minima_y, facecolors='none', edgecolors='black', marker='o')
-        max = plt.scatter(maxima_x, maxima_y, color='black', marker='o')
-        sad = plt.scatter(saddle_x, saddle_y, color='black', marker='x')
-        plt.legend((min, max, sad),
-            ('Minimum', 'Maximum', 'Saddle point'),
-            scatterpoints=1,
-            loc='lower left',
-            ncol=3,
-            fontsize=10)
-    if title != "":
-        plt.title(title, fontsize=16)
-    #plt.savefig(f"plots/preliminary_tests/{file_name}.png", format='pdf')
-    plt.savefig(f"plots/preliminary_tests/{file_name}_noLabels.pdf", format='pdf')
-    plt.close()
-
-def plot_2D_scatter(points, values, label, title, file_name):
-    '''
-        Surface plot of values on a 2D grid (defined by points). 
-
-        Args:
-            points (array): 2xn array, that defines the points on the grid in each dimension
-            values (array): nxn array, values corresponding to each point on the grid
-            label (String): z-label in plot
-            title (String): title for plot
-            file_name (String): file name
-    '''
-    X,Y = np.meshgrid(points[0,:], points[1,:])
-    df = pd.DataFrame({'X': Y.flatten(), #switching Y and X since that's how our value landscapes are computed
-                   'Y':X.flatten(), 
-                   'Z':values.flatten()})
-    
-    # get the Colour
-    x              = df.values
-    min_max_scaler = preprocessing.MinMaxScaler()
-    x_scaled       = min_max_scaler.fit_transform(x)
-    df_S           = pd.DataFrame(x_scaled)
-    c1             = df['Z']
-    c2             = df_S[2]
-    colors         = [cm.viridis(color) for color in c2]
-
-    # Plot circles
-    plt.figure()
-    plt.grid()
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-
-    plt.xlim([np.min(points[0])-0.5,np.max(points[0])+0.5])
-    plt.ylim([np.min(points[1])-0.5,np.max(points[1])+0.5])
-    plt.xlabel('$x_1$')
-    plt.ylabel('$x_2$')
-    ax.set_aspect(1.0)
-
-    sc = plt.scatter(df['X'], df['Y'], s=30, c=c1, cmap='viridis', facecolors='none')
-
-    cbar = plt.colorbar(sc)
-    cbar.set_label(label, labelpad=10)
-    plt.title(title)
-    plt.savefig(f"plots/preliminary_tests/{file_name}.png", format='pdf')
-    plt.close()
 
 if __name__=="__main__":
-
     make_f_plots_for_thesis()
+
 
 

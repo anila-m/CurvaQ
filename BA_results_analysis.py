@@ -462,11 +462,18 @@ def analyze_outliers(dimension, directory, attribute, value_label="TASC", no_out
 
 
 if __name__=="__main__":
-    # example on how to use functions
+    # example on how to use functions: Create several plots for 6D experiment results
     directory = "results/main_experiment/6D_cost"
     dimension = 6
     for attribute in ["s_rank", "number_of_data_points"]:
+        print(f"Fourier Density per {attribute}")
         get_boxplot_fourier_density_per_attribute(dimension, directory, attribute)
+        print(f"TASC per {attribute}")
+        get_boxplot_per_attribute(dimension, directory, attribute,value_label="TASC")
+        print(f"STD TASC per {attribute}")
+        get_boxplot_perCostLandscape_per_attribute(dimension, directory, attribute)
+        print(f"Outlier TASC per {attribute}")
+        analyze_outliers(dimension, directory, attribute)
         
         
 

@@ -2,6 +2,9 @@ import json
 import os
 from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import cm
+import pandas as pd
+from sklearn import preprocessing
 
 from BA_experiment_resources import attribute_configs_3D, attribute_configs_6D, attribute_values_3D, attribute_values_6D, attribute_names
 
@@ -268,3 +271,156 @@ def outlier_aware_hist(ax, no_bins,data, lower=None, upper=None):
         ax.legend()
     ax.set_xlabel("Absolute value of Fourier coefficient", fontsize=12)
     ax.set_ylabel("Frequency", fontsize=12) 
+
+def plot_2D_surface(points, values, label, title, file_name):
+    '''
+        Surface plot of values on a 2D grid (defined by points). 
+
+        Args:
+            points (array): 2xn array, that defines the points on the grid in each dimension
+            values (array): nxn array, values corresponding to each point on the grid
+            label (String): z-label in plot
+            title (String): title for plot
+            file_name (String): file name
+    '''
+    X,Y = np.meshgrid(points[0,:], points[1,:])
+    ax = plt.subplot(111, projection='3d')
+    ax.plot_surface(Y, X, values, rstride=1, cstride=1, cmap=cm.viridis, linewidth=0.1) #switch Y and X, since that's how our TASC value landscapes are computed
+    ax.set(xlabel='$x_1$', ylabel='$x_2$', zlabel=label)
+    plt.title(title)
+    plt.savefig(f"plots/preliminary_tests/{file_name}.png", format='pdf')
+    plt.close()
+
+def plot_2D_overlapping_circles(points, values, label, title, file_name, ticklabels=[], ticks=[], cosine=False):
+    '''
+        Surface plot of values on a 2D grid (defined by points). 
+
+        Args:
+            points (array): 2xn array, that defines the points on the grid in each dimension
+            values (array): nxn array, values corresponding to each point on the grid
+            label (String): z-label in plot
+            title (String): title for plot
+            file_name (String): file name
+    '''
+    X,Y = np.meshgrid(points[0,:], points[1,:])
+    df = pd.DataFrame({'X': Y.flatten(), #switching Y and X since that's how our value landscapes are computed
+                   'Y':X.flatten(), 
+                   'Z':values.flatten()})
+    
+    # get the Colour
+    x              = df.values
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_scaled       = min_max_scaler.fit_transform(x)
+    df_S           = pd.DataFrame(x_scaled)
+    c1             = df['Z']
+    c2             = df_S[2]
+    colors         = [cm.viridis(color) for color in c2]
+
+    #determine radius of circles
+    r = points[0,1]-points[0,0]
+
+    # Plot circles
+    plt.figure(figsize=(8,6))
+    plt.grid()
+    ax = plt.gca()
+    ax.set_axisbelow(True)
+    for a, b, color in zip(df['X'], df['Y'], colors):
+        circle = plt.Circle((a, 
+                            b), 
+                            radius=r, # radius
+                            color=color, 
+                            fill=True,
+                            alpha=0.5)
+        ax.add_artist(circle)
+
+    plt.xlim([np.min(points[0])-r,np.max(points[0])+r])
+    plt.ylim([np.min(points[1])-r,np.max(points[1])+r])
+    if len(ticks)>0 and len(ticklabels)>0:
+        plt.xticks(ticks=ticks, labels=ticklabels)
+        plt.yticks(ticks=ticks, labels=ticklabels)
+    #plt.xlabel('$x$', fontsize=14)
+    #plt.ylabel('$y$', fontsize=14)
+    ax.set_aspect(1.0)
+
+    sc = plt.scatter(df['X'], df['Y'], s=0, c=c1, cmap='viridis', facecolors='none')
+
+    cbar = plt.colorbar(sc)
+    cbar.set_label(label, labelpad=10, fontsize=14)
+
+    # if the values belong to the cosine_2D function used for thesis (as an example): also plot critical points
+    if cosine:
+        minima_x, minima_y = [], []
+        maxima_x, maxima_y = [], []
+        saddle_x, saddle_y = [], []
+        for i in range(3):
+            for j in range(3):
+                point_x = i*np.pi/4
+                point_y = j*np.pi/4
+                if i%2==0 and j%2 == 0:
+                    maxima_x.extend([point_x, -point_x, point_x, -point_x])
+                    maxima_y.extend([point_y, point_y, -point_y, -point_y])
+                elif i%2==1 and j%2==1:
+                    minima_x.extend([point_x, -point_x, point_x, -point_x])
+                    minima_y.extend([point_y, point_y, -point_y, -point_y])
+                else:
+                    saddle_x.extend([point_x, -point_x, point_x, -point_x])
+                    saddle_y.extend([point_y, point_y, -point_y, -point_y])
+        min = plt.scatter(minima_x, minima_y, facecolors='none', edgecolors='black', marker='o')
+        max = plt.scatter(maxima_x, maxima_y, color='black', marker='o')
+        sad = plt.scatter(saddle_x, saddle_y, color='black', marker='x')
+        plt.legend((min, max, sad),
+            ('Minimum', 'Maximum', 'Saddle point'),
+            scatterpoints=1,
+            loc='lower left',
+            ncol=3,
+            fontsize=10)
+    if title != "":
+        plt.title(title, fontsize=16)
+    #plt.savefig(f"plots/preliminary_tests/{file_name}.png", format='pdf')
+    plt.savefig(f"plots/preliminary_tests/{file_name}_noLabels.pdf", format='pdf')
+    plt.close()
+
+def plot_2D_scatter(points, values, label, title, file_name):
+    '''
+        Surface plot of values on a 2D grid (defined by points). 
+
+        Args:
+            points (array): 2xn array, that defines the points on the grid in each dimension
+            values (array): nxn array, values corresponding to each point on the grid
+            label (String): z-label in plot
+            title (String): title for plot
+            file_name (String): file name
+    '''
+    X,Y = np.meshgrid(points[0,:], points[1,:])
+    df = pd.DataFrame({'X': Y.flatten(), #switching Y and X since that's how our value landscapes are computed
+                   'Y':X.flatten(), 
+                   'Z':values.flatten()})
+    
+    # get the Colour
+    x              = df.values
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_scaled       = min_max_scaler.fit_transform(x)
+    df_S           = pd.DataFrame(x_scaled)
+    c1             = df['Z']
+    c2             = df_S[2]
+    colors         = [cm.viridis(color) for color in c2]
+
+    # Plot circles
+    plt.figure()
+    plt.grid()
+    ax = plt.gca()
+    ax.set_axisbelow(True)
+
+    plt.xlim([np.min(points[0])-0.5,np.max(points[0])+0.5])
+    plt.ylim([np.min(points[1])-0.5,np.max(points[1])+0.5])
+    plt.xlabel('$x_1$')
+    plt.ylabel('$x_2$')
+    ax.set_aspect(1.0)
+
+    sc = plt.scatter(df['X'], df['Y'], s=30, c=c1, cmap='viridis', facecolors='none')
+
+    cbar = plt.colorbar(sc)
+    cbar.set_label(label, labelpad=10)
+    plt.title(title)
+    plt.savefig(f"plots/preliminary_tests/{file_name}.png", format='pdf')
+    plt.close()

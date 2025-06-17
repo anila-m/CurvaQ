@@ -7,7 +7,7 @@ from scipy import stats
 
 from metrics import *
 from BA_testing_functions import rosen_projection_to_2d
-from BA_thesis_plots import plot_2D_overlapping_circles, plot_2D_scatter, plot_2D_surface
+from BA_analysis_util import plot_2D_overlapping_circles, plot_2D_scatter, plot_2D_surface
 
 
 def generate_grid_point_array(stepsize, lower_left, N):
@@ -2137,7 +2137,6 @@ def one_iteration_grid_TASC(function, lower_left, stepsize, directory="", iterat
                 plot_2D_surface(red_points, values, label, title, file_name)
                 plot_2D_overlapping_circles(red_points, values, label, title, file_name2)
     return elapsed_time
-
 
 if __name__ == "__main__":
     plot_all_QNN_tasc_grids()
